@@ -8,7 +8,7 @@ If you are running Pandora FMS 777, Pandora Open 1.0 is your natural upgrade pat
 
 The project is maintained by some of the original core engineering team and welcomes community contributions and leadership. Whether you are migrating from 777 or starting fresh, Pandora Open is designed to be the monitoring platform you actually own.
 
-Explore the project at `https://pandoraopen.io`
+Explore the project at [https://pandoraopen.io](https://pandoraopen.io)
 
 ## One tool. Every layer.
 
@@ -37,6 +37,18 @@ Pandora Open doesn't care about your vendor or your platform. It’s built to be
 - GPL2 licence.
 
 ## How to install Pandora Open
+
+### Using docker
+
+Using docker
+
+<pre bash>
+mkdir $HOME/pandora; cd $HOME/pandora
+curl -fSsL -O https://raw.githubusercontent.com/pandorafms/pandora-open/main/extra/docker/docker-compose.yml
+docker-compose -f docker-compose.yml up
+</pre>
+
+By default it uses 8081/tcp port for Pandora Console
 
 ### From the repository
 
