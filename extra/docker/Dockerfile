@@ -1,4 +1,4 @@
-# docker build --no-cache --pull --build-arg GIT_REPO="GIT_REPO" -t ghcr.io/pandorafms/pandoraopen:el9 -f Dockerfile .
+# docker build --no-cache --pull -t ghcr.io/pandorafms/pandoraopen:el9 -f Dockerfile .
 # docker push ghcr.io/pandorafms/pandoraopen:el9
 # docker tag ghcr.io/pandorafms/pandoraopen:el9 ghcr.io/pandorafms/pandoraopen:latest
 # docker push ghcr.io/pandorafms/pandoraopen:latest
@@ -112,14 +112,14 @@ RUN dnf clean all
 
 # Download repository
 RUN git clone $GIT_REPO
-RUN cd pandoraopen && git checkout $BRANCH
-RUN cd pandoraopen && git pull
+RUN cd pandora-open && git checkout $BRANCH
+RUN cd pandora-open && git pull
 
 # Create packages
-RUN cd pandoraopen && make
+RUN cd pandora-open && mkdir build && make
 
 # Install console
-RUN tar xvzf pandoraopen/build/pandoraopen-console-*.tar.gz && cp -Ra pandora_console /var/www/html/ && rm -rf pandora_console
+RUN tar xvzf pandora-open/build/pandoraopen-console-*.tar.gz && cp -Ra pandora_console /var/www/html/ && rm -rf pandora_console
 RUN rm -f $PANDORA_CONSOLE/*.spec 
 
 # Install Agent
@@ -128,9 +128,9 @@ RUN rm -f $PANDORA_CONSOLE/*.spec
 
 # Install Server
 RUN useradd pandora
-RUN tar xvzf pandoraopen/build/pandoraopen-server-*.tar.gz && cd pandora_server && ./pandora_server_installer --install  && cd
+RUN tar xvzf pandora-open/build/pandoraopen-server-*.tar.gz && cd pandora_server && ./pandora_server_installer --install  && cd
 RUN rm -rf pandora_server
 
 EXPOSE 80 443 41121 162/udp 9995/udp
 
-CMD ["sh", "/opt/pandora/pandoraopen/extra/Docker/src/entypoint.sh"]
+CMD ["sh", "/opt/pandora/pandora-open/extra/docker/src/entypoint.sh"]

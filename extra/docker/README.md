@@ -36,7 +36,7 @@ The recomended way to install Panadora Open its in a MySQL/mariadb database, her
 
 Example:
 ```
-ddocker run --rm \
+docker run --rm \
   --name mariadb-pandoraopen \
   -p 3306:3306 \
   -e MARIADB_ROOT_PASSWORD='Pandor4_' \
