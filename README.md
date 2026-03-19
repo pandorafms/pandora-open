@@ -50,7 +50,7 @@ Pandora Open doesn't care about your vendor or your platform. It’s built to be
 - Download the deploy script (link) to the same directory.
 - Run `sudo bash pandora_deploy.sh`.
 
-Check the [manual installation on our wiki]([https://github.com/pandorafms/pandora-open/wiki/Build](https://github.com/pandorafms/pandora-open/wiki/Install))
+Check the [manual installation on our wiki](https://github.com/pandorafms/pandora-open/wiki/Install))
 
 ## How to upgrade from Pandora FMS 777 to Pandora OPEN 1.0
 
