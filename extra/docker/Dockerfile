@@ -5,7 +5,7 @@
 FROM rockylinux/rockylinux:9
 
 ARG PHPVER=8.2
-ARG GIT_REPO=""
+ARG GIT_REPO="https://github.com/pandorafms/pandora-open.git"
 ARG BRANCH=main
 ENV PHPVER=$PHPVER
 ENV IMAGE_NAME='pandorafms/pandoraopen-base:el9'
@@ -114,8 +114,6 @@ RUN dnf clean all
 RUN git clone $GIT_REPO
 RUN cd pandoraopen && git checkout $BRANCH
 RUN cd pandoraopen && git pull
-#Remove before upload to github.
-RUN cd pandoraopen && rm -rf .git
 
 # Create packages
 RUN cd pandoraopen && make
@@ -135,4 +133,4 @@ RUN rm -rf pandora_server
 
 EXPOSE 80 443 41121 162/udp 9995/udp
 
-CMD ["sh", "/opt/pandora/pandoraopen/Docker/src/entypoint.sh"]
+CMD ["sh", "/opt/pandora/pandoraopen/extra/Docker/src/entypoint.sh"]
