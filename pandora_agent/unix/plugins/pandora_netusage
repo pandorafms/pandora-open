@@ -1,0 +1,32 @@
+#!/bin/bash
+
+result=$(cat /proc/net/dev)
+
+
+if [ $? -ne 0 ]; then
+    echo "Error executing the command.."
+    exit 1
+fi
+
+lines=$(echo "$result" | tail -n +3)
+
+sum=0
+
+while IFS= read -r line; do
+    if [ -n "$line" ]; then
+        parts=($line)
+        rx_bytes=${parts[1]}
+        tx_bytes=${parts[9]}
+        total_bytes=$((rx_bytes + tx_bytes))
+        sum=$((sum + total_bytes))
+    fi
+done <<< "$lines"
+
+echo "<module>"
+echo " <name><![CDATA[Network_Usage_Bytes]]></name>"
+echo " <type><![CDATA[generic_data_inc]]></type>"
+echo " <data><![CDATA[$sum]]></data>"
+echo " <unit><![CDATA[bytes/sec]]></unit>"
+echo " <description><![CDATA[Total bytes/sec transfered in this system]]></description>"
+echo " <module_group>Networking</module_group>"
+echo "</module>"

@@ -1,0 +1,81 @@
+.new_task p,
+.new_task b,
+.new_task div {
+  font-size: 1.05em;
+}
+.new_task p,
+.new_task div {
+  font-weight: inherit;
+}
+
+.new_task {
+  min-width: 600px;
+  width: 100%;
+  left: 20px;
+  height: auto;
+  background-color: #ececec;
+  border-radius: 3px 3px 3px 3px;
+  clear: both;
+  display: flex;
+  flex-direction: row;
+  padding: 1em 0 1em;
+  align-items: center;
+}
+
+.title_task {
+  background: url(../../images/icono_exclamacion.png) no-repeat scroll 280px 50%
+    #82b92e;
+  padding: 10px 5px 6px 300px;
+  margin: 5px 5px 10px 5px;
+  font-weight: bold;
+  color: #fff;
+  border-radius: 3px 3px 3px 3px;
+}
+
+.image_task {
+  margin: auto 35px;
+}
+
+.image_task > img {
+  position: relative;
+}
+
+.text_task {
+  flex: 1 1 auto;
+  width: 70%;
+  float: left;
+  height: 100%;
+  padding-right: 25px;
+}
+
+.button_task {
+  margin-top: 10px;
+  background-color: #3f3f3f;
+  padding: 10px 10px 10px 10px;
+  font-weight: bold;
+  color: #82b92e;
+  border: none;
+}
+.button_task_mini {
+  height: 38px !important;
+  line-height: 0px;
+}
+
+.empty-view input.button_task {
+  width: unset;
+}
+
+#description_task {
+  line-height: 1.8em;
+}
+
+#fuerte {
+}
+
+.flex-row-baseline * {
+  margin-right: 1em;
+}
+
+input.button_task:not([type="image"]):focus {
+  border: 0;
+}

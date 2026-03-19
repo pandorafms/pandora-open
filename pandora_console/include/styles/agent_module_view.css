@@ -1,0 +1,118 @@
+#select_multiple_modules_filtered_formated {
+  border: 1px solid #c1c1c1;
+  border-radius: 10px;
+  width: auto;
+}
+
+#select_multiple_modules_filtered_formated > div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px;
+}
+
+#select_multiple_modules_filtered_formated > div > div {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 48%;
+}
+
+#select_multiple_modules_filtered_formated .recursive-modules {
+  flex: auto;
+  width: 100%;
+}
+
+#select_multiple_modules_filtered_formated .recursive-modules > div {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+#select_multiple_modules_filtered_formated .recursive-modules > div > label {
+  max-width: unset;
+  font-weight: unset;
+}
+
+#select_multiple_modules_filtered_formated > div > div > select {
+  min-width: 250px !important;
+}
+
+#select_multiple_modules_filtered_formated > div > div > label.p-switch {
+  width: 10%;
+}
+
+#select_multiple_modules_filtered_formated > div > div > label.font-title-font {
+  margin-top: 5px;
+}
+
+#select_multiple_modules_filtered_formated > div > div > .select2 {
+  min-width: 250px !important;
+}
+
+form.modal-dashboard ul.wizard li {
+  align-items: flex-start;
+}
+
+form.modal-dashboard ul.wizard li label {
+  max-width: 100% !important;
+  width: 100%;
+}
+
+.flex-colum-center-important > select {
+  width: 95%;
+  height: 119px;
+  min-height: auto;
+}
+
+.wizard > li:nth-of-type(1) {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-area: titulo;
+}
+
+.wizard > li:nth-of-type(1) > input {
+  width: 100%;
+}
+
+.wizard > li:nth-of-type(2) {
+  grid-area: color;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.wizard > li:nth-of-type(3) {
+  grid-area: show;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+ul.wizard > li.flex-row > label {
+  width: 100%;
+  max-width: 100% !important;
+  min-height: 30px;
+}
+
+.wizard > li:nth-of-type(4) {
+  grid-area: todo;
+  width: 100% !important;
+}
+
+ul.wizard {
+  display: grid;
+  grid-template:
+    "titulo show color"
+    "todo todo todo";
+  grid-template-columns: 40% 40% 20%;
+}
+
+#wr_background > input {
+  background-color: #f6f7fb;
+  padding: 5px;
+  border-radius: 10px;
+  border: 1px solid #8a96a6;
+}

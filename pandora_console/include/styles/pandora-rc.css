@@ -1,0 +1,146 @@
+/**
+ * Pandora FMS OpenSource
+ * Copyright (c) 2004-2025 Pandora FMS Community
+ * https://pandorafms.org
+ *
+ * Este programa es software libre; puedes redistribuirlo y/o modificarlo bajo
+ * los términos de la Licencia Pública General de GNU publicada por la Free
+ * Software Foundation para la versión 2. Este programa se distribuye con la
+ * esperanza de que sea útil, pero SIN NINGUNA GARANTÍA; ni siquiera con la
+ * garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO
+ * PARTICULAR. Consulta la Licencia Pública General de GNU para más detalles.
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation for version 2. This program is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY; without any implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * Эта программа является свободным программным обеспечением; вы можете
+ * распространять и/или изменять её в соответствии с условиями Стандартной
+ * общественной лицензии GNU (GPL), опубликованной Фондом свободного
+ * программного обеспечения (Free Software Foundation) для версии 2. Эта
+ * программа распространяется в надежде, что она будет полезной, НО БЕЗ
+ * КАКИХ-ЛИБО ГАРАНТИЙ, даже без подразумеваемой гарантии КОММЕРЧЕСКОЙ
+ * ПРИГОДНОСТИ или ПРИГОДНОСТИ ДЛЯ КОНКРЕТНОЙ ЦЕЛИ. Подробнее см. Стандартную
+ * общественную лицензию GNU.
+ *
+ * Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou le
+ * modifier selon les termes de la Licence Publique Générale GNU, publiée par
+ * la Free Software Foundation pour la version 2. Ce programme est distribué
+ * dans l'espoir qu'il sera utile, mais SANS AUCUNE GARANTIE, même sans la
+ * garantie implicite de QUALITÉ MARCHANDE ou D'ADÉQUATION À UN USAGE
+ * PARTICULIER. Consultez la Licence Publique Générale GNU pour plus de détails.
+ *
+ * このプログラムはフリーソフトウェアです。GNU一般公衆利用許諾書
+ * （Free Software Foundationによって公開されたバージョン2）の条件の下で、
+ * 自由に再配布および改変することができます。本プログラムは有用であることを
+ * 願って配布されますが、いかなる保証もありません。商品性や特定目的への適合性の
+ * 保証も含まれません。詳しくはGNU一般公衆利用許諾書をご覧ください。
+ * ============================================================================
+ */
+
+
+div#main {
+  margin-bottom: 25px;
+}
+
+.rc-ad-view-main {
+  width: 100%;
+  /* height: calc(100vh - 158px); */
+  box-sizing: border-box;
+  padding: 63px 125px;
+  border: 1px solid var(--border-color-4);
+  border-radius: 25px;
+  background-color: var(--secondary-color);
+  background-image: url(../../images/ehorus/ad/background.svg);
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position-x: center;
+}
+
+.rc-ad-view-first-row {
+  width: 100%;
+  height: 255px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 60px;
+}
+
+.rc-ad-view-first-row > div {
+  width: 450px;
+  height: 100%;
+  color: var(--text-color-2);
+  font-family: "lato-bold";
+  font-size: 40px;
+  line-height: 48px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.rc-ad-view-first-row > div * {
+  background-color: var(--pandora-rc-color);
+  width: 221px;
+  height: 42px;
+  border: 0;
+  border-radius: 8px;
+  font-family: "lato-bold";
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.rc-ad-view-first-row > div button:hover {
+  opacity: 0.9;
+}
+
+.rc-ad-view-first-row > img {
+  width: calc(100% - 480px);
+  max-height: 255px;
+}
+
+.rc-ad-view-main > p {
+  margin-top: 60px;
+  color: var(--text-color-3);
+  font-size: 18px;
+  line-height: 22px;
+}
+
+.rc-ad-view-second-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.rc-ad-view-second-row > div {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+  border: 1px solid var(--border-color-4);
+  border-radius: 10px;
+  padding: 20px;
+  width: calc((100% - 100px) / 5);
+}
+
+.rc-ad-view-second-row > div > img {
+  max-width: 100%;
+}
+
+.rc-ad-view-second-row > div > span {
+  margin-top: 20px;
+  color: var(--text-color-2);
+  font-family: "lato-bold";
+  font-size: 20px;
+  line-height: 24px;
+  text-align: center;
+}

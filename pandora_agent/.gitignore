@@ -1,0 +1,4 @@
+# Build/Autoconf Artifacts
+config.log
+autom4te.cache/
+depcomp

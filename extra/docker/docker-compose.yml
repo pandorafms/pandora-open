@@ -1,0 +1,61 @@
+services:
+  pandora-open-db:
+    image: mariadb:11.8
+    platform: linux/amd64
+    container_name: mariadb-pandora
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_DATABASE: pandora
+      MARIADB_USER: pandora
+      MARIADB_PASSWORD: Pandor4_
+      MARIADB_ROOT_PASSWORD: Pandor4_
+    command: --sql-mode=""
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+     - pandora
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pandora-open:
+    image: ghcr.io/pandorafms/pandoraopen:el9
+    platform: linux/amd64
+    restart: unless-stopped
+    depends_on:
+      pandora-open-db:
+        condition: service_healthy
+    environment:
+      TZ: Europe/Madrid
+      DBHOST: pandora-open-db
+      DBNAME: pandora
+      DBUSER: pandora
+      DBPASS: Pandor4_
+      DBPORT: 3306
+      INSTANCE_NAME: PandoraOpen
+      PUBLICURL: ""
+      SLEEP: 5
+      RETRIES: 10
+    networks:
+     - pandora
+    ports:
+      - "8081:80"
+      - "41121:41121"
+      - "162:162/udp"
+      - "9995:9995/udp"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mariadb_data:
+
+networks:
+  pandora:

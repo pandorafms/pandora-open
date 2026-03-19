@@ -1,0 +1,1093 @@
+<?php
+/**
+ * Pandora FMS OpenSource
+ * Copyright (c) 2004-2025 Pandora FMS Community
+ * https://pandorafms.org
+ *
+ * Este programa es software libre; puedes redistribuirlo y/o modificarlo bajo
+ * los términos de la Licencia Pública General de GNU publicada por la Free
+ * Software Foundation para la versión 2. Este programa se distribuye con la
+ * esperanza de que sea útil, pero SIN NINGUNA GARANTÍA; ni siquiera con la
+ * garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO
+ * PARTICULAR. Consulta la Licencia Pública General de GNU para más detalles.
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation for version 2. This program is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY; without any implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * Эта программа является свободным программным обеспечением; вы можете
+ * распространять и/или изменять её в соответствии с условиями Стандартной
+ * общественной лицензии GNU (GPL), опубликованной Фондом свободного
+ * программного обеспечения (Free Software Foundation) для версии 2. Эта
+ * программа распространяется в надежде, что она будет полезной, НО БЕЗ
+ * КАКИХ-ЛИБО ГАРАНТИЙ, даже без подразумеваемой гарантии КОММЕРЧЕСКОЙ
+ * ПРИГОДНОСТИ или ПРИГОДНОСТИ ДЛЯ КОНКРЕТНОЙ ЦЕЛИ. Подробнее см. Стандартную
+ * общественную лицензию GNU.
+ *
+ * Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou le
+ * modifier selon les termes de la Licence Publique Générale GNU, publiée par
+ * la Free Software Foundation pour la version 2. Ce programme est distribué
+ * dans l'espoir qu'il sera utile, mais SANS AUCUNE GARANTIE, même sans la
+ * garantie implicite de QUALITÉ MARCHANDE ou D'ADÉQUATION À UN USAGE
+ * PARTICULIER. Consultez la Licence Publique Générale GNU pour plus de détails.
+ *
+ * このプログラムはフリーソフトウェアです。GNU一般公衆利用許諾書
+ * （Free Software Foundationによって公開されたバージョン2）の条件の下で、
+ * 自由に再配布および改変することができます。本プログラムは有用であることを
+ * 願って配布されますが、いかなる保証もありません。商品性や特定目的への適合性の
+ * 保証も含まれません。詳しくはGNU一般公衆利用許諾書をご覧ください。
+ * ============================================================================
+ */
+
+// Begin.
+global $config;
+
+check_login();
+
+// Visual console required.
+if (empty($visualConsole) === true) {
+    db_pandora_audit(
+        AUDIT_LOG_ACL_VIOLATION,
+        'Trying to access report builder'
+    );
+    include 'general/noaccess.php';
+    exit;
+}
+
+// ACL for the existing visual console
+// if (!isset($vconsole_read))
+// $vconsole_read = check_acl ($config['id_user'], $visualConsole['id_group'], "VR");
+if (!isset($vconsole_write)) {
+    $vconsole_write = check_acl(
+        $config['id_user'],
+        $visualConsole['id_group'],
+        'VW'
+    );
+}
+
+if (!isset($vconsole_manage)) {
+    $vconsole_manage = check_acl(
+        $config['id_user'],
+        $visualConsole['id_group'],
+        'VM'
+    );
+}
+
+if (!$vconsole_write && !$vconsole_manage) {
+    db_pandora_audit(
+        AUDIT_LOG_ACL_VIOLATION,
+        'Trying to access report builder'
+    );
+    include 'general/noaccess.php';
+    exit;
+}
+
+require_once $config['homedir'].'/include/functions_visual_map.php';
+require_once $config['homedir'].'/include/functions_agents.php';
+// Arrays for select box.
+$backgrounds_list = list_files(
+    $config['homedir'].'/images/console/background/',
+    'jpg',
+    1,
+    0
+);
+$backgrounds_list = array_merge(
+    $backgrounds_list,
+    list_files($config['homedir'].'/images/console/background/', 'png', 1, 0)
+);
+
+$images_list = [];
+$all_images = list_files(
+    $config['homedir'].'/images/console/icons/',
+    'png',
+    1,
+    0
+);
+foreach ($all_images as $image_file) {
+    if (strpos($image_file, '_bad')) {
+        continue;
+    }
+
+    if (strpos($image_file, '_ok')) {
+        continue;
+    }
+
+    if (strpos($image_file, '_warning')) {
+        continue;
+    }
+
+    $image_file = substr($image_file, 0, (strlen($image_file) - 4));
+    $images_list[$image_file] = $image_file;
+}
+
+$table = new stdClass();
+$table->width = '100%';
+$table->class = 'databox filter-table-adv';
+$table->styleTable = 'min-width: 900px; table-layout:fixed;';
+
+$table->head = [];
+$table->head['icon'] = '';
+$table->head[0] = __('Label').'<br>'.__('Agent').' / '.__('Group');
+$table->head[1] = __('Image').'<br>'.__('Module').' / '.__('Custom graph');
+$table->head[2] = __('Width x Height<br>Max value');
+$table->head[3] = __('Position').'<br>'.__('Period');
+$table->head[4] = __('Parent').'<br>'.__('Map linked');
+$table->head[5] = html_print_checkbox(
+    'head_multiple_delete',
+    '',
+    false,
+    true,
+    false,
+    'toggle_checkbox_multiple_delete();'
+);
+$table->head[5] .= '&nbsp;&nbsp;&nbsp;<span title="'.__('Action').'">'.__('A.').'</span>';
+
+$table->headstyle = [];
+$table->headstyle['icon'] = 'text-align:left; width: 1%;';
+$table->headstyle[0] = 'text-align:left; width: 19%;';
+$table->headstyle[1] = 'text-align:left; width: 19%;';
+$table->headstyle[2] = 'text-align:left; width: 19%;';
+$table->headstyle[3] = 'text-align:left; width: 19%;';
+$table->headstyle[4] = 'text-align:left; width: 19%;';
+$table->headstyle[5] = 'text-align:right; width: 4%;';
+
+$table->align = [];
+$table->align[0] = 'left';
+$table->align[1] = 'left';
+$table->align[2] = 'left';
+$table->align[3] = 'left';
+$table->align[4] = 'left';
+$table->align[5] = 'right';
+
+$table->data = [];
+
+// Background.
+$table->data[0]['icon'] = '';
+$table->data[0][0] = '<div>'.__('Background').'</div>';
+$table->data[0][1] = '<div>';
+$table->data[0][1] .= html_print_select(
+    $backgrounds_list,
+    'background',
+    $visualConsole['background'],
+    '',
+    'None',
+    '',
+    true,
+    false,
+    true,
+    '',
+    false,
+    'width: 100%;'
+);
+$table->data[0][1] .= '</div>';
+$table->data[0][2] = '<div class="row-flex">';
+$table->data[0][2] .= html_print_input_text(
+    'width',
+    $visualConsole['width'],
+    '',
+    3,
+    5,
+    true
+);
+$table->data[0][2] .= '<span class="mrgn_5px">x</span>';
+$table->data[0][2] .= html_print_input_text(
+    'height',
+    $visualConsole['height'],
+    '',
+    3,
+    5,
+    true
+);
+$table->data[0][2] .= '</div>';
+$table->data[0][3] = '';
+$table->data[0][4] = '';
+$table->data[0][5] = '';
+
+$i = 1;
+$layoutDatas = db_get_all_rows_field_filter(
+    'tlayout_data',
+    'id_layout',
+    $idVisualConsole
+);
+if ($layoutDatas === false) {
+    $layoutDatas = [];
+}
+
+$alternativeStyle = true;
+
+$parents = visual_map_get_items_parents($idVisualConsole);
+$x = 0;
+foreach ($layoutDatas as $layoutData) {
+    $idLayoutData = $layoutData['id'];
+
+    // Line between rows.
+    $table->data[$i][0] = '<hr>';
+    $table->colspan[$i][0] = '8';
+
+    switch ($layoutData['type']) {
+        case STATIC_GRAPH:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/static-graph.svg',
+                true,
+                [
+                    'title' => __('Static Image'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case PERCENTILE_BAR:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/percentil.svg',
+                true,
+                [
+                    'title' => __('Percentile Bar'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case PERCENTILE_BUBBLE:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/percentil.svg',
+                true,
+                [
+                    'title' => __('Percentile Bubble'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case CIRCULAR_INTERIOR_PROGRESS_BAR:
+        case CIRCULAR_PROGRESS_BAR:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/percentil.svg',
+                true,
+                [
+                    'title' => __('Percentile'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case MODULE_GRAPH:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/module-graph.svg',
+                true,
+                [
+                    'title' => __('Module Graph'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case AUTO_SLA_GRAPH:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/event-history.svg',
+                true,
+                [
+                    'title' => __('Event history graph'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case SIMPLE_VALUE:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/simple-value.svg',
+                true,
+                [
+                    'title' => __('Simple Value'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case SIMPLE_VALUE_MAX:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/simple-value.svg',
+                true,
+                [
+                    'title' => __('Simple Value (Process Max)'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case SIMPLE_VALUE_MIN:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/simple-value.svg',
+                true,
+                [
+                    'title' => __('Simple Value (Process Min)'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case SIMPLE_VALUE_AVG:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/simple-value.svg',
+                true,
+                [
+                    'title' => __('Simple Value (Process Avg)'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case LABEL:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/item-label.svg',
+                true,
+                [
+                    'title' => __('Label'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case ICON:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/item-icon.svg',
+                true,
+                [
+                    'title' => __('Icon'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case BOX_ITEM:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/item-box.svg',
+                true,
+                [
+                    'title' => __('Box'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case GROUP_ITEM:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/item-group.svg',
+                true,
+                [
+                    'title' => __('Group'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case NETWORK_LINK:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/network-line.svg',
+                true,
+                [
+                    'title' => __('Network link'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case LINE_ITEM:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/item-line.svg',
+                true,
+                [
+                    'title' => __('Line'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case COLOR_CLOUD:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/color-cloud.svg',
+                true,
+                [
+                    'title' => __('Color cloud'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case BASIC_CHART:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/SNMP@svg.svg',
+                true,
+                [
+                    'title' => __('Basic chart'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case ODOMETER:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/odometro.svg',
+                true,
+                [
+                    'title' => __('Odometer'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        case CLOCK:
+            $table->data[($i + 1)]['icon'] = html_print_image(
+                'images/clock.svg',
+                true,
+                [
+                    'title' => __('Clock'),
+                    'class' => 'main_menu_icon invert_filter',
+                ]
+            );
+        break;
+
+        default:
+                $table->data[($i + 1)]['icon'] = '';
+        break;
+    }
+
+    // First row
+    // Label.
+    switch ($layoutData['type']) {
+        case ICON:
+        case BOX_ITEM:
+        case NETWORK_LINK:
+        case LINE_ITEM:
+            // Hasn't the label.
+            $table->data[($i + 1)][0] = '';
+        break;
+
+        default:
+            $table->data[($i + 1)][0] = '<span class="w150px block">';
+            $table->data[($i + 1)][0] .= html_print_input_hidden('label_'.$idLayoutData, $layoutData['label'], true);
+            $table->data[($i + 1)][0] .= '<a href="javascript: show_dialog_label_editor('.$idLayoutData.');">';
+            $table->data[($i + 1)][0] .= __('Edit label');
+            $table->data[($i + 1)][0] .= '</a></span>';
+        break;
+    }
+
+    // Image.
+    switch ($layoutData['type']) {
+        case STATIC_GRAPH:
+        case ICON:
+        case GROUP_ITEM:
+        case SERVICE:
+            $table->data[($i + 1)][1] = html_print_select(
+                $images_list,
+                'image_'.$idLayoutData,
+                $layoutData['image'],
+                '',
+                'None',
+                '',
+                true,
+                false,
+                true,
+                '',
+                false,
+                'width: 100%'
+            );
+        break;
+
+        default:
+            $table->data[($i + 1)][1] = '';
+        break;
+    }
+
+    // Position.
+    $readonly = false;
+    if ($layoutData['type'] == NETWORK_LINK || $layoutData['type'] == LINE_ITEM) {
+        $readonly = true;
+    }
+
+    // Width and height.
+    switch ($layoutData['type']) {
+        case COLOR_CLOUD:
+            $table->data[($i + 1)][2] = '<div class="row-flex">';
+            $table->data[($i + 1)][2] .= html_print_input_text(
+                'width_'.$idLayoutData,
+                $layoutData['width'],
+                '',
+                2,
+                5,
+                true
+            );
+            $table->data[($i + 1)][2] .= '<span class="mrgn_5px">x</span>';
+            $table->data[($i + 1)][2] .= html_print_input_text(
+                'height_'.$idLayoutData,
+                $layoutData['width'],
+                '',
+                2,
+                5,
+                true
+            );
+            $table->data[($i + 1)][2] .= '</div>';
+        break;
+
+        case CIRCULAR_PROGRESS_BAR:
+        case CIRCULAR_INTERIOR_PROGRESS_BAR:
+        case PERCENTILE_BUBBLE:
+        case PERCENTILE_BAR:
+            $table->data[($i + 1)][2] = '<div class="row-flex">';
+            $table->data[($i + 1)][2] .= html_print_input_text(
+                'width_'.$idLayoutData,
+                $layoutData['width'],
+                '',
+                2,
+                5,
+                true
+            );
+            $table->data[($i + 1)][2] .= '</div>';
+        break;
+
+        default:
+            $table->data[($i + 1)][2] = '<div class="row-flex">';
+            $table->data[($i + 1)][2] .= html_print_input_text(
+                'width_'.$idLayoutData,
+                $layoutData['width'],
+                '',
+                2,
+                5,
+                true,
+                $readonly
+            );
+            $table->data[($i + 1)][2] .= '<span class="mrgn_5px">x</span>';
+            $table->data[($i + 1)][2] .= html_print_input_text(
+                'height_'.$idLayoutData,
+                $layoutData['height'],
+                '',
+                2,
+                5,
+                true,
+                $readonly
+            );
+            $table->data[($i + 1)][2] .= '</div>';
+        break;
+    }
+
+    $table->data[($i + 1)][3] = '<div class="row-flex">';
+    $table->data[($i + 1)][3] .= '<span class="mrgn_5px">(</span>';
+    $table->data[($i + 1)][3] .= html_print_input_text(
+        'left_'.$idLayoutData,
+        $layoutData['pos_x'],
+        '',
+        2,
+        5,
+        true,
+        $readonly
+    );
+    $table->data[($i + 1)][3] .= '<span class="mrgn_5px">,</span>';
+    $table->data[($i + 1)][3] .= html_print_input_text(
+        'top_'.$idLayoutData,
+        $layoutData['pos_y'],
+        '',
+        2,
+        5,
+        true,
+        $readonly
+    );
+    $table->data[($i + 1)][3] .= '<span class="mrgn_5px">)</span>';
+    $table->data[($i + 1)][3] .= '</div>';
+
+    // Parent.
+    switch ($layoutData['type']) {
+        case BOX_ITEM:
+        case NETWORK_LINK:
+        case LINE_ITEM:
+        case COLOR_CLOUD:
+            $table->data[($i + 1)][4] = '';
+        break;
+
+        default:
+            $table->data[($i + 1)][4] = '<div>'.html_print_select(
+                $parents,
+                'parent_'.$idLayoutData,
+                $layoutData['parent_item'],
+                '',
+                __('None'),
+                0,
+                true,
+                false,
+                true,
+                '',
+                false,
+                'width: 100%;'
+            ).'</div>';
+        break;
+    }
+
+    // Delete row button.
+    $url_delete = 'index.php?sec=network&sec2=godmode/reporting/visual_console_builder';
+    $url_delete .= '&tab='.$activeTab.'&action=delete';
+    $url_delete .= '&id_visual_console='.$visualConsole['id'].'&id_element='.$idLayoutData;
+    
+
+    $table->data[($i + 1)][5] = '<div class="row-flex flex-end">';
+    $table->data[($i + 1)][5] .= html_print_checkbox('multiple_delete_items', $idLayoutData, false, true);
+    $table->data[($i + 1)][5] .= '<a href="'.$url_delete.'"onclick="javascript: if (!confirm(\''.__('Are you sure?').'\')) return false;">';
+    $table->data[($i + 1)][5] .= html_print_image(
+        'images/delete.svg',
+        true,
+        ['class' => 'main_menu_icon invert_filter']
+    );
+    $table->data[($i + 1)][5] .= '</a>';
+    $table->data[($i + 1)][5] .= html_print_input_hidden('updated_'.$idLayoutData, '0', true);
+    $table->data[($i + 1)][5] .= html_print_input_hidden('rowtype_'.$idLayoutData, $layoutData['type'], true);
+    $table->data[($i + 1)][5] .= '</div>';
+
+    // Second row.
+    $table->data[($i + 2)]['icon'] = '';
+
+    // Agent.
+    switch ($layoutData['type']) {
+        case GROUP_ITEM:
+            $own_info = get_user_info($config['id_user']);
+            if ((bool) $own_info['is_admin'] === false
+                && (bool) check_acl($config['id_user'], 0, 'PM') === false
+            ) {
+                $return_all_group = false;
+            } else {
+                $return_all_group = true;
+            }
+
+            $table->data[($i + 2)][0] = html_print_select_groups(
+                false,
+                'AR',
+                $return_all_group,
+                'group_'.$idLayoutData,
+                $layoutData['id_group'],
+                '',
+                '',
+                0,
+                true,
+                false,
+                false,
+                '',
+                false,
+                'width:100%'
+            );
+        break;
+
+        case BOX_ITEM:
+        case ICON:
+        case LABEL:
+        case NETWORK_LINK:
+        case LINE_ITEM:
+        case CLOCK:
+            $table->data[($i + 2)][0] = '';
+        break;
+
+        default:
+            $params = [];
+            $params['return'] = true;
+            $params['show_helptip'] = false;
+            $params['size'] = 20;
+            $params['input_name'] = 'agent_'.$idLayoutData;
+            $params['javascript_is_function_select'] = true;
+            $params['selectbox_id'] = 'module_'.$idLayoutData;
+
+                $params['print_hidden_input_idagent'] = true;
+                $params['hidden_input_idagent_name'] = 'id_agent_'.$idLayoutData;
+                $params['hidden_input_idagent_value'] = $layoutData['id_agent'];
+                $params['value'] = db_get_value('alias', 'tagente', 'id_agente', $layoutData['id_agent']);
+            
+
+            if ((int) $layoutData['id_custom_graph'] !== 0) {
+                $table->data[($i + 2)][0] = __('Custom graph');
+            } else {
+                $table->data[($i + 2)][0] = ui_print_agent_autocomplete_input($params);
+            }
+        break;
+    }
+
+    // Module.
+    switch ($layoutData['type']) {
+        case ICON:
+        case LABEL:
+        case BOX_ITEM:
+        case NETWORK_LINK:
+        case LINE_ITEM:
+        case GROUP_ITEM:
+        case CLOCK:
+            $table->data[($i + 2)][1] = '';
+        break;
+
+        default:
+            if ($layoutData['id_layout_linked'] != 0) {
+                // It is a item that links with other visualmap.
+                $table->data[($i + 2)][1] = '';
+                break;
+            }
+
+                $modules = agents_get_modules($layoutData['id_agent']);
+            
+
+            $modules = io_safe_output($modules);
+
+            if ($layoutData['id_custom_graph'] != 0) {
+
+                    $table->data[($i + 2)][1] = html_print_select_from_sql(
+                        'SELECT id_graph, name FROM tgraph',
+                        'custom_graph_'.$idLayoutData,
+                        $layoutData['id_custom_graph'],
+                        '',
+                        __('None'),
+                        0,
+                        true,
+                        false,
+                        true,
+                        false,
+                        'width:100%'
+                    );
+                
+            } else {
+                $table->data[($i + 2)][1] = html_print_select(
+                    $modules,
+                    'module_'.$idLayoutData,
+                    $layoutData['id_agente_modulo'],
+                    '',
+                    '---',
+                    0,
+                    true,
+                    false,
+                    true,
+                    '',
+                    false,
+                    'width: 100%'
+                );
+            }
+        break;
+    }
+
+    // Empty.
+    $table->data[($i + 2)][2] = '';
+
+    // Period.
+    switch ($layoutData['type']) {
+        case MODULE_GRAPH:
+        case SIMPLE_VALUE_MAX:
+        case SIMPLE_VALUE_MIN:
+        case SIMPLE_VALUE_AVG:
+            $table->data[($i + 2)][3] .= '<div class="row-flex">';
+            $table->data[($i + 2)][3] .= html_print_extended_select_for_time(
+                'period_'.$idLayoutData,
+                $layoutData['period'],
+                '',
+                '--',
+                '0',
+                10,
+                true
+            );
+            $table->data[($i + 2)][3] .= '</div>';
+        break;
+
+        default:
+            $table->data[($i + 2)][3] = '';
+        break;
+    }
+
+    // Map linked.
+    switch ($layoutData['type']) {
+        case NETWORK_LINK:
+        case LINE_ITEM:
+        case BOX_ITEM:
+        case AUTO_SLA_GRAPH:
+        case COLOR_CLOUD:
+            $table->data[($i + 2)][4] = '';
+        break;
+
+        default:
+            $table->data[($i + 2)][4] = html_print_select_from_sql(
+                'SELECT id, name
+					FROM tlayout
+					WHERE id != '.$idVisualConsole,
+                'map_linked_'.$idLayoutData,
+                $layoutData['id_layout_linked'],
+                '',
+                'None',
+                '0',
+                true,
+                false,
+                true,
+                false,
+                'width:100%'
+            );
+        break;
+    }
+
+    $table->data[($i + 2)][5] = '';
+
+    if ($alternativeStyle) {
+        $table->rowclass[($i + 1)] = 'rowOdd';
+        $table->rowclass[($i + 2)] = 'rowOdd';
+    } else {
+        $table->rowclass[($i + 1)] = 'rowPair';
+        $table->rowclass[($i + 2)] = 'rowPair';
+    }
+
+    $alternativeStyle = !$alternativeStyle;
+
+    $i = ($i + 3);
+    $x++;
+}
+
+$x = (($x * 13) + 14);
+if ($x > ini_get('max_input_vars')) {
+    ui_print_warning_message(__('You have to change the <b>"max_input_vars"</b> and set bigger value on <b>php.ini</b> for update, there is too much elements to update'));
+}
+
+$pure = get_parameter('pure', 0);
+
+html_print_table($table);
+
+// Form for multiple delete.
+
+    $url_multiple_delete = 'index.php?sec=network&sec2=godmode/reporting/visual_console_builder&tab='.$activeTab.'&id_visual_console='.$visualConsole['id'];
+
+
+$buttons = html_print_submit_button(
+    __('Update'),
+    'go',
+    false,
+    [
+        'icon'    => 'next',
+        'form'    => 'vc_elem_form',
+        'onclick' => 'submit_update_json()',
+    ],
+    true
+);
+
+$buttons .= "<form id='form_multiple_delete' method='post' action=".$url_multiple_delete.'>';
+
+    $buttons .= html_print_input_hidden('action', 'multiple_delete', true);
+
+
+$buttons .= html_print_input_hidden('id_visual_console', $visualConsole['id'], true);
+$buttons .= html_print_input_hidden('id_item_json', '', true);
+
+
+$buttons .= html_print_button(
+    __('Delete'),
+    'delete',
+    false,
+    'submit_delete_multiple_items();',
+    [
+        'icon' => 'delete',
+        'mode' => 'secondary',
+    ],
+    true
+);
+
+$buttons .= '</form>';
+
+html_print_action_buttons(
+    $buttons
+);
+
+
+// Trick for it have a traduct text for javascript.
+echo '<span id="ip_text" class="invisible">'.__('IP').'</span>';
+?>
+<div id="dialog_label_editor">
+    <input id="active_id_layout_data" type="hidden" />
+    <textarea id="tinyMCE_editor" name="tinyMCE_editor"></textarea>
+</div>
+<?php
+ui_require_css_file('color-picker', 'include/styles/js/');
+
+ui_require_jquery_file('colorpicker');
+ui_require_jquery_file('pandora.controls');
+ui_require_javascript_file('wz_jsgraphics');
+ui_require_javascript_file('pandora_visual_console');
+ui_require_jquery_file('ajaxqueue');
+ui_require_jquery_file('bgiframe');
+ui_require_javascript_file('tinymce', 'vendor/tinymce/tinymce/');
+?>
+
+<script type="text/javascript">
+    $(document).ready (function () {
+        $('form.vc_elem_form').submit(function() {
+            var inputs_array = $(this).serializeArray();
+            var form_action = {};
+
+            form_action.name = 'go';
+            form_action.value = 'Update';
+            inputs_array.push(form_action);
+
+            var serialized_form_inputs = JSON.stringify(inputs_array);
+            var ajax_url = "<?php echo 'index.php?sec=network&sec2=godmode/reporting/visual_console_builder&tab='.$activeTab.'&id_visual_console='.$visualConsole['id']; ?>";
+
+            $.post({
+                url: ajax_url,
+                data: { serialized_form_inputs },
+                dataType: "json",
+                async: false,
+                complete: function (data) {
+                    location.reload();
+                }
+            });
+
+            return false;
+        });
+
+        $('select[id^="image_"], input[name^="width_"], input[name^="height"], input[name^="left_"], input[name^="top_"], select[id^="parent_"], input[id^="agent_"], select[id^="module_"]').change(function(){
+            var id = $(this).attr('id').split('_')[1];
+            $('#hidden-updated_'+id).val('1');
+        });
+
+        $('select[id^="map_linked"]').change(function(){
+            var id = $(this).attr('id').split('_')[2];
+            $('#hidden-updated_'+id).val('1');
+        });
+
+        defineTinyMCE('#tinyMCE_editor');
+
+        $("#dialog_label_editor").hide ()
+            .dialog ({
+                title: "<?php echo __('Edit label'); ?>",
+                resizable: false,
+                draggable: true,
+                modal: true,
+                overlay: {
+                    opacity: 0.5,
+                    background: "black"
+                },
+                width: 530,
+                height: 300,
+                autoOpen: false,
+                beforeClose: function() {
+                    var id_layout_data = $("#active_id_layout_data").val();
+                    var label = tinyMCE.activeEditor.getContent();
+                    $("#hidden-label_" + id_layout_data).val(label);
+                },
+                buttons: {
+                    Save: function() {
+                        $(this).dialog("close");
+                    }
+                }
+            });
+
+        var idText = $("#ip_text").html();
+    });
+
+    function show_dialog_label_editor(id_layout_data) {
+        var label = $("#hidden-label_" + id_layout_data).val();
+        $("#active_id_layout_data").val(id_layout_data);
+        tinyMCE.activeEditor.setContent(label);
+        $("#dialog_label_editor").dialog("open");
+    }
+
+    function toggle_checkbox_multiple_delete() {
+        checked_head_multiple = $("input[name='head_multiple_delete']")
+            .is(":checked");
+        $("input[name='multiple_delete_items']")
+            .prop("checked", checked_head_multiple);
+    }
+
+    function submit_delete_multiple_items() {
+        event.preventDefault();
+        delete_items = [];
+        jQuery.each($("input[name='multiple_delete_items']:checked"),
+            function(i, item) {
+                delete_items.push($(item).val());
+            }
+        );
+
+        $.ajax({
+            type: "POST",
+            url: "ajax.php",
+            data: {
+                page: "godmode/reporting/visual_console_builder",
+                action: "multiple_delete",
+                tab: "list_elements",
+                id_item_json: JSON.stringify(delete_items),
+                id_visual_console: "<?php echo $visualConsole['id']; ?>",
+            },
+            dataType: "json",
+            complete: function (data) {
+                location.reload();
+            }
+        });
+
+        return false;
+    }
+
+    function submit_update_json() {
+        var array_update = [];
+        $('input[id^=hidden-updated_]').each(function(){
+            var id = $(this).attr('id').split('_')[1];
+
+            var label = $('#hidden-label_'+id).val();
+            var image = $('#image_'+id).val();
+            var width = $('#text-width_'+id).val();
+            var height = $('#text-height_'+id).val();
+            var pos_x = $('#text-left_'+id).val();
+            var pos_y = $('#text-top_'+id).val();
+            var parent = $('#parent_'+id).val();
+            var agent = $('#hidden-agent_'+id).val();
+            var module = $('#module_'+id).val();
+            var period = $('#hidden-period_'+id).val();
+            var map_linked = $('#map_linked_'+id).val();
+            var id_server = $('#id_server_id_'+id).val();
+            var rowtype = $('rowtype_'+id).val();
+            var custom_graph = $('#custom_graph_'+id).val();
+
+            array_update.push({
+                'id': id,
+                'label': label,
+                'image': image,
+                'width': width,
+                'height': height,
+                'pos_x': pos_x,
+                'pos_y': pos_y,
+                'parent': parent,
+                'agent': agent,
+                'module': module,
+                'period': period,
+                'map_linked': map_linked,
+                'rowtype': rowtype,
+                'custom_graph': custom_graph,
+                'id_server': id_server,
+            });
+        });
+
+        var background_width = $('#text-width').val();
+        var background_height = $('#text-height').val();
+
+        if (background_height > 0 && background_width > 0){
+            $.ajax({
+                type: "POST",
+                url: "ajax.php",
+                data: {
+                    page: "godmode/reporting/visual_console_builder",
+                    action: "update_json",
+                    tab: "list_elements",
+                    array_update: JSON.stringify(array_update),
+                    id_visual_console: "<?php echo $visualConsole['id']; ?>",
+                    background: $('#background').val(),
+                    background_width: $('#text-width').val(),
+                    background_height: $('#text-height').val(),
+                },
+                dataType: "json",
+                complete: function (data) {
+                    location.reload();
+                }
+            });
+        } else {
+            confirmDialog({
+                title: "<?php echo __('Error.'); ?>",
+                message: "<?php echo __('The width and height property is required and should greater than 0'); ?>",
+                strOKButton: "<?php echo __('Close'); ?>",
+                hideCancelButton: true,
+                size: 300,
+            });
+        }
+    }
+</script>

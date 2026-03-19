@@ -1,0 +1,250 @@
+/*
+ * Discovery > Wizard css global style
+ */
+#main > form.discovery.wizard > .white_box {
+  min-width: 1024px;
+}
+ul.wizard {
+  list-style-type: none;
+}
+
+ul.wizard li {
+  padding-bottom: 10px;
+  padding-top: 10px;
+}
+
+#principal_action_buttons ul.wizard li {
+  padding: 0px;
+}
+
+.label_csv {
+  margin-bottom: 5px;
+}
+
+ul.wizard.inline li {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.list .edit_discovery_input {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.list .label_select {
+  margin-bottom: 0;
+}
+
+ul.wizard li > label:not(.p-switch):first-of-type {
+  width: 250px;
+  vertical-align: top;
+  display: inline-block;
+}
+
+/* ul.wizard li > label:not(.p-switch):not(:first-of-type) {
+  margin-left: 1em;
+} */
+
+.select2.select2-container {
+  min-width: 200px;
+}
+
+ul.wizard li > textarea {
+  height: 15em;
+  display: inline-block;
+}
+
+.wizard .hidden {
+  display: none;
+}
+
+.indented {
+  margin-left: 1em;
+}
+
+.wizard .indented {
+  margin-left: 1em;
+}
+
+.wizard .std_input {
+  display: flex;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.std_input.hidden {
+  display: none;
+}
+
+.wizard .std_input > .label_select {
+  flex: 1 1 100%;
+}
+.wizard .std_input > * {
+  flex: 1 1 auto;
+  align-self: baseline;
+}
+
+.wizard .inline_input.no-margin {
+  margin-bottom: 0px;
+}
+.wizard .inline_input {
+  display: flex;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.wizard .inline_input * {
+  flex: 1 1 auto;
+}
+
+.wizard .discovery_inline_input {
+  display: inline;
+  align-content: end;
+  align-self: flex-start;
+}
+
+/* override tag-editor styles */
+.wizard .tag-editor.ui-sortable {
+  width: 450px;
+  display: inline-block;
+}
+
+.wizard .tag-editor .tag-editor-tag {
+  padding: 5px;
+  color: #fff;
+  background: #82b92e;
+}
+
+.wizard .tag-editor .tag-editor-delete i {
+  line-height: inherit;
+}
+.wizard .tag-editor .tag-editor-delete i:before {
+  color: #ccc;
+}
+.wizard .tag-editor .tag-editor-delete:hover i:before {
+  color: #fff;
+}
+
+.wizard .tag-editor .tag-editor-delete {
+  padding: 5px;
+  background: #e63c52;
+}
+
+.wizard .tag-editor li,
+.wizard .tag-editor li:focus,
+.wizard .tag-editor li:hover {
+  border: 0;
+  padding: 0;
+}
+.wizard .time_selection_container {
+  display: flex;
+  align-items: baseline;
+  justify-items: center;
+  align-content: space-between;
+  margin-top: 1em;
+}
+
+.wizard #interval_manual_container #interval_manual > * {
+  flex: 1 1 auto;
+}
+
+.wizard-column-levels {
+  float: left;
+  width: 33%;
+  text-align: center;
+}
+
+.wizard-column-levels-check {
+  float: left;
+  width: 17%;
+  text-align: center;
+}
+
+.action_button_list {
+  display: flex;
+  align-content: center;
+  justify-content: flex-end;
+  height: 60px;
+}
+
+.action_button_list ul {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  align-items: center;
+}
+.action_button_list li {
+  display: inline;
+}
+
+.searchbox ul {
+  justify-content: space-between;
+}
+
+.searchbox ul li:not(.textbox) {
+  flex-direction: row-reverse !important;
+  justify-content: flex-end !important;
+}
+
+.searchbox ul li.textbox label {
+  width: auto;
+}
+.searchbox ul li.textbox {
+  justify-content: space-evenly !important;
+  flex: 1 1 auto;
+}
+
+ul.wizard li.mrgn_0px {
+  margin: 0;
+}
+
+ul.wizard li.pdd_0px {
+  padding: 0;
+}
+
+li#textarea-create-site > textarea {
+  width: 100%;
+}
+
+form.alert-correlation > ul.wizard > li > label,
+form#create_site > ul.wizard > li > label {
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+select[multiple] {
+  min-height: 20em;
+}
+
+form.alert-correlation > div > ul,
+form.alert-correlation > ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+form.alert-correlation > div > ul > li.flex-flex-end {
+  display: flex;
+  align-items: flex-end;
+}
+
+form.alert-correlation > div > ul > li.flex-flex-end > input {
+  width: 150px !important;
+}
+
+form.alert-correlation > div > ul > li.flex-flex-end > label {
+  width: 50px !important;
+}
+
+form.alert-correlation > div > ul > li.display-grid > textarea {
+  width: 100% !important;
+}

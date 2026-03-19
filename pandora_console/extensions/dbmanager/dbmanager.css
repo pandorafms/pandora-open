@@ -1,0 +1,29 @@
+table.dbmanager,
+table.dbmanager td,
+table.dbmanager th {
+  border: 1px solid #888;
+  border-collapse: collapse;
+  margin: 0;
+  padding: 0;
+}
+
+table.dbmanager td,
+table.dbmanager th {
+  padding: 0.2em 0.5em;
+  vertical-align: top;
+  font-weight: normal;
+  background: #fafafa;
+  color: #000;
+  font-size: 9px;
+}
+
+table.dbmanager th {
+  color: #fff;
+  font-size: 10px;
+  background: #888;
+}
+
+textarea {
+  width: 100% !important;
+  max-width: 100% !important;
+}

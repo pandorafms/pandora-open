@@ -1,0 +1,45 @@
+#!/bin/sh
+
+# **********************************************************************
+# Pandora Open Agent Daemon launcher for FreeBSD
+# (c) 2010 Junichi Satoh <junichi@rworks.jp>
+# (c) 2014 Koichiro Kikuchi <koichiro@rworks.jp>
+#
+# **********************************************************************
+
+# PROVIDE: pandora_agent
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+
+# Add the following line to /etc/rc.conf to enable `pandora_agent':
+#
+# pandora_agent_enable="YES"
+#
+
+. "/etc/rc.subr"
+
+name="pandora_agent"
+rcvar=pandora_agent_enable
+
+# read configuration and set defaults
+pandora_agent_enable=${pandora_agent_enable:-"NO"}
+load_rc_config "$name"
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
+
+pidfile=/var/run/$name.pid
+required_files="/usr/local/etc/pandora/pandora_agent.conf"
+stop_postcmd=stop_postcmd
+
+command=/usr/sbin/daemon
+command_interpreter=/usr/local/bin/perl
+procname=/usr/local/bin/pandora_agent
+
+command_args="-cfp $pidfile $procname /usr/local/etc/pandora"
+
+stop_postcmd()
+{
+	rm -f $pidfile
+}
+
+run_rc_command "$1"

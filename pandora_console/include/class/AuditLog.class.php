@@ -1,0 +1,612 @@
+<?php
+// phpcs:disable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
+/**
+ * Pandora FMS OpenSource
+ * Copyright (c) 2004-2025 Pandora FMS Community
+ * https://pandorafms.org
+ *
+ * Este programa es software libre; puedes redistribuirlo y/o modificarlo bajo
+ * los términos de la Licencia Pública General de GNU publicada por la Free
+ * Software Foundation para la versión 2. Este programa se distribuye con la
+ * esperanza de que sea útil, pero SIN NINGUNA GARANTÍA; ni siquiera con la
+ * garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO
+ * PARTICULAR. Consulta la Licencia Pública General de GNU para más detalles.
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation for version 2. This program is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY; without any implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * Эта программа является свободным программным обеспечением; вы можете
+ * распространять и/или изменять её в соответствии с условиями Стандартной
+ * общественной лицензии GNU (GPL), опубликованной Фондом свободного
+ * программного обеспечения (Free Software Foundation) для версии 2. Эта
+ * программа распространяется в надежде, что она будет полезной, НО БЕЗ
+ * КАКИХ-ЛИБО ГАРАНТИЙ, даже без подразумеваемой гарантии КОММЕРЧЕСКОЙ
+ * ПРИГОДНОСТИ или ПРИГОДНОСТИ ДЛЯ КОНКРЕТНОЙ ЦЕЛИ. Подробнее см. Стандартную
+ * общественную лицензию GNU.
+ *
+ * Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou le
+ * modifier selon les termes de la Licence Publique Générale GNU, publiée par
+ * la Free Software Foundation pour la version 2. Ce programme est distribué
+ * dans l'espoir qu'il sera utile, mais SANS AUCUNE GARANTIE, même sans la
+ * garantie implicite de QUALITÉ MARCHANDE ou D'ADÉQUATION À UN USAGE
+ * PARTICULIER. Consultez la Licence Publique Générale GNU pour plus de détails.
+ *
+ * このプログラムはフリーソフトウェアです。GNU一般公衆利用許諾書
+ * （Free Software Foundationによって公開されたバージョン2）の条件の下で、
+ * 自由に再配布および改変することができます。本プログラムは有用であることを
+ * 願って配布されますが、いかなる保証もありません。商品性や特定目的への適合性の
+ * 保証も含まれません。詳しくはGNU一般公衆利用許諾書をご覧ください。
+ * ============================================================================
+ */
+// Begin.
+global $config;
+
+// Necessary classes for extends.
+require_once $config['homedir'].'/include/class/HTML.class.php';
+/**
+ * Class AuditLog
+ */
+class AuditLog extends HTML
+{
+
+    /**
+     * Allowed methods to be called using AJAX request.
+     *
+     * @var array
+     */
+    public $AJAXMethods = ['draw'];
+
+    /**
+     * Ajax page.
+     *
+     * @var string
+     */
+    private $ajaxController;
+
+    /**
+     * TableId
+     *
+     * @var integer
+     */
+    public $tableId;
+
+    /**
+     * FilterIp
+     *
+     * @var array
+     */
+    public $filterIp;
+
+    /**
+     * FilterPeriod
+     *
+     * @var integer
+     */
+    public $filterPeriod;
+
+    /**
+     * FilterText
+     *
+     * @var string
+     */
+    public $filterText;
+
+    /**
+     * FilterType
+     *
+     * @var string
+     */
+    public $filterType;
+
+    /**
+     * FilterUser
+     *
+     * @var string
+     */
+    public $filterUser;
+
+
+    /**
+     * Class constructor
+     *
+     * @param string $ajaxController Ajax controller.
+     */
+    public function __construct(string $ajaxController)
+    {
+        global $config;
+
+        check_login();
+
+        if (check_acl($config['id_user'], 0, 'PM') === false
+            && is_user_admin($config['id_user']) === true
+        ) {
+            db_pandora_audit(
+                AUDIT_LOG_ACL_VIOLATION,
+                'Trying to access Audit Logs'
+            );
+            include 'general/noaccess.php';
+            return;
+        }
+
+        // Set the ajax controller.
+        $this->ajaxController = $ajaxController;
+    }
+
+
+    /**
+     * Run view
+     *
+     * @return void
+     */
+    public function run()
+    {
+        // Javascript.
+        ui_require_jquery_file('pandora');
+        // CSS.
+        ui_require_css_file('wizard');
+        ui_require_css_file('discovery');
+        // Datatables list.
+        try {
+            $columns = [
+                [
+                    'text'  => 'id_usuario',
+                    'class' => 'w50px',
+                ],
+                'accion',
+                'fecha',
+                'ip_origen',
+                'descripcion',
+            ];
+
+            $column_names = [
+                __('User'),
+                __('Action'),
+                __('Date'),
+                __('Source IP'),
+                __('Comments'),
+            ];
+
+            $this->tableId = 'audit_logs';
+
+            ui_print_standard_header(
+                __('%s audit', get_product_name()).' &raquo; '.__('Review Logs'),
+                'images/gm_log@svg.svg',
+                false,
+                '',
+                false,
+                [],
+                [
+                    [
+                        'link'  => '',
+                        'label' => __('Admin Tools'),
+                    ],
+                    [
+                        'link'  => '',
+                        'label' => __('System Audit log'),
+                    ],
+                ]
+            );
+
+            $buttons = [];
+
+            $buttons[] = [
+                'id'      => 'load-filter',
+                'class'   => 'float-left margin-right-2 margin-left-2 sub config',
+                'text'    => __('Load filter'),
+                'icon'    => 'load',
+                'onclick' => '',
+            ];
+
+            $buttons[] = [
+                'id'      => 'save-filter',
+                'class'   => 'float-left margin-right-2 sub wand',
+                'text'    => __('Save filter'),
+                'icon'    => 'save',
+                'onclick' => '',
+            ];
+
+            // Modal for save/load filters.
+            echo '<div id="save-modal-filter" style="display:none"></div>';
+            echo '<div id="load-modal-filter" style="display:none"></div>';
+
+            // Load datatables user interface.
+            ui_print_datatable(
+                [
+                    'id'                  => $this->tableId,
+                    'class'               => 'info_table',
+                    'style'               => 'width: 100%',
+                    'columns'             => $columns,
+                    'column_names'        => $column_names,
+                    'ajax_url'            => $this->ajaxController,
+                    'ajax_data'           => ['method' => 'draw'],
+                    'ajax_postprocces'    => 'process_datatables_item(item)',
+                    'no_sortable_columns' => [-1],
+                    'order'               => [
+                        'field'     => 'date',
+                        'direction' => 'desc',
+                    ],
+                    'search_button_class' => 'sub filter float-right',
+                    'form'                => [
+                        'extra_buttons' => $buttons,
+                        'inputs'        => [
+                            [
+                                'label' => __('Free search').ui_print_help_tip(__('Search filter by User, Action, Date, Source IP or Comments fields content'), true),
+                                'type'  => 'text',
+                                'class' => 'w100p',
+                                'id'    => 'filter_text',
+                                'name'  => 'filter_text',
+                            ],
+                            [
+                                'label' => __('Date'),
+                                'type'  => 'date_range',
+                            ],
+                            [
+                                'label' => __('IP'),
+                                'type'  => 'text',
+                                'class' => 'w100p',
+                                'id'    => 'filter_ip',
+                                'name'  => 'filter_ip',
+                            ],
+                            [
+                                'label'         => __('Action'),
+                                'type'          => 'select_from_sql',
+                                'nothing'       => __('All'),
+                                'nothing_value' => '-1',
+                                'sql'           => 'SELECT DISTINCT(accion), accion AS text FROM tsesion',
+                                'class'         => 'mw200px',
+                                'id'            => 'filter_type',
+                                'name'          => 'filter_type',
+                            ],
+                            [
+                                'label'         => __('User'),
+                                'type'          => 'select_from_sql',
+                                'nothing'       => __('All'),
+                                'nothing_value' => '-1',
+                                'sql'           => 'SELECT id_user, id_user AS text FROM tusuario UNION SELECT "SYSTEM"
+                                                    AS id_user, "SYSTEM" AS text UNION SELECT "N/A"
+                                                    AS id_user, "N/A" AS text',
+                                'class'         => 'mw200px',
+                                'id'            => 'filter_user',
+                                'name'          => 'filter_user',
+                            ],
+                        ],
+                    ],
+                    'filter_main_class'   => 'box-flat white_table_graph fixed_filter_bar',
+                ]
+            );
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+
+        // Load own javascript file.
+        echo $this->loadJS();
+
+        html_print_action_buttons([], ['type' => 'form_action']);
+    }
+
+
+    /**
+     * Get the data for draw the table.
+     *
+     * @return void.
+     */
+    public function draw()
+    {
+        global $config;
+        // Initialice filter.
+        $filter = '1=1';
+        // Init data.
+        $data = [];
+        // Count of total records.
+        $count = 0;
+        // Catch post parameters.
+        $start              = get_parameter('start', 0);
+        $length             = get_parameter('length', $config['block_size']);
+        $order              = get_datatable_order();
+        $filters            = get_parameter('filter', []);
+        $this->filterType   = $filters['filter_type'];
+        $this->filterUser   = $filters['filter_user'];
+        $this->filterText   = $filters['filter_text'];
+        $this->filterPeriod = (empty($filters['filter_period']) === false) ? $filters['filter_period'] : 24;
+        $this->filterIp     = $filters['filter_ip'];
+
+        if (empty($this->filterType) === false && $this->filterType !== '-1') {
+            $filter .= sprintf(" AND accion = '%s'", $this->filterType);
+        }
+
+        if (empty($this->filterUser) === false && $this->filterUser !== '-1') {
+            $filter .= sprintf(" AND id_usuario = '%s'", $this->filterUser);
+        }
+
+        if (empty($this->filterText) === false) {
+            $filter .= sprintf(
+                " AND (accion LIKE '%%%s%%' OR descripcion LIKE '%%%s%%' OR id_usuario LIKE '%%%s%%' OR fecha LIKE '%%%s%%' OR ip_origen LIKE '%%%s%%')",
+                $this->filterText,
+                $this->filterText,
+                $this->filterText,
+                $this->filterText,
+                $this->filterText
+            );
+        }
+
+        if (empty($this->filterIp) === false) {
+            $filter .= sprintf(" AND ip_origen LIKE '%%%s%%'", $this->filterIp);
+        }
+
+        // Calculate range dates.
+        $custom_date = $filters['custom_date'];
+        if ($custom_date === '1') {
+            $date_from = ($filters['date_init'].' '.$filters['time_init']);
+            $date_to = ($filters['date_end'].' '.$filters['time_end']);
+        } else if ($custom_date === '2') {
+            $period = ($filters['date_text'] * $filters['date_units']);
+            $date_to = date('Y-m-d H:i:s');
+            $date_from = date('Y-m-d H:i:s', (strtotime($date_to) - $period));
+        } else if (in_array($filters['date'], ['this_week', 'this_month', 'past_week', 'past_month'])) {
+            if ($filters['date'] === 'this_week') {
+                $date_from = date('Y-m-d 00:00:00', strtotime('last monday'));
+                $date_to = date('Y-m-d 23:59:59', strtotime($date_from.' +6 days'));
+            } else if ($filters['date'] === 'this_month') {
+                $date_from = date('Y-m-d 23:59:59', strtotime('first day of this month'));
+                $date_to = date('Y-m-d 00:00:00', strtotime('last day of this month'));
+            } else if ($filters['date'] === 'past_month') {
+                $date_from = date('Y-m-d 00:00:00', strtotime('first day of previous month'));
+                $date_to = date('Y-m-d 23:59:59', strtotime('last day of previous month'));
+            } else if ($filters['date'] === 'past_week') {
+                $date_from = date('Y-m-d 00:00:00', strtotime('monday', strtotime('last week')));
+                $date_to = date('Y-m-d 23:59:59', strtotime('sunday', strtotime('last week')));
+            }
+        } else {
+            $date_to = date('Y-m-d H:i:s');
+            $date_from = date('Y-m-d H:i:s', (strtotime($date_to) - $filters['date']));
+        }
+
+        $filter .= sprintf(' AND fecha BETWEEN "%s" AND "%s"', $date_from, $date_to);
+        $count = (int) db_get_value_sql(sprintf('SELECT COUNT(*) as "total" FROM tsesion WHERE %s', $filter));
+
+        if ($length !== '-1') {
+            $sql = sprintf(
+                'SELECT *
+                FROM tsesion
+                WHERE %s
+                ORDER BY %s
+                LIMIT %d, %d',
+                $filter,
+                $order,
+                $start,
+                $length
+            );
+        } else {
+            $sql = sprintf(
+                'SELECT *
+                FROM tsesion
+                WHERE %s
+                ORDER BY %s',
+                $filter,
+                $order
+            );
+        }
+
+        $data = db_get_all_rows_sql($sql);
+
+        if (empty($data) === false) {
+            $data = array_reduce(
+                $data,
+                function ($carry, $item) {
+                    global $config;
+                    // Transforms array of arrays $data into an array
+                    // of objects, making a post-process of certain fields.
+                    $tmp = (object) $item;
+
+                    $tmp->id_usuario  = io_safe_output($tmp->id_usuario);
+                    $tmp->ip_origen   = io_safe_output($tmp->ip_origen);
+                    $tmp->descripcion = io_safe_output($tmp->descripcion);
+                    $tmp->accion      = ui_print_session_action_icon($tmp->accion, true).$tmp->accion;
+                    $tmp->utimestamp  = ui_print_help_tip(
+                        date(
+                            $config['date_format'],
+                            $tmp->utimestamp
+                        ),
+                        true
+                    ).ui_print_timestamp($tmp->utimestamp, true);
+
+                    $carry[] = $tmp;
+                    return $carry;
+                }
+            );
+        }
+
+        echo json_encode(
+            [
+                'data'            => $data,
+                'recordsTotal'    => $count,
+                'recordsFiltered' => $count,
+            ]
+        );
+    }
+
+
+    /**
+     * Checks if target method is available to be called using AJAX.
+     *
+     * @param string $method Target method.
+     *
+     * @return boolean True allowed, false not.
+     */
+    public function ajaxMethod(string $method)
+    {
+        return in_array($method, $this->AJAXMethods);
+    }
+
+
+    /**
+     * Load Javascript code.
+     *
+     * @return string.
+     */
+    public function loadJS()
+    {
+        // Nothing for this moment.
+        ob_start();
+
+        // Javascript content.
+        ?>
+        <script type="text/javascript">
+            var loading = 0;
+
+            function format(d) {
+                var output = '';
+
+                if (d.extendedInfo === '') {
+                    output = "<?php echo __('There is no additional information to display'); ?>";
+                } else {
+                    output = d.extendedInfo;
+                }
+
+                return output;
+            }
+
+            $(document).ready(function() {
+                // Add event listener for opening and closing details
+                $(document).on('click', '#audit_logs tbody tr:has(td.show_extended_info)', function() {
+                    var tr = $(this).closest('tr');
+                    var table = $("#<?php echo $this->tableId; ?>").DataTable();
+                    var row = table.row(tr);
+
+                    if (row.child.isShown()) {
+                    // This row is already open - close it
+                        row.child.hide();
+                        tr.removeClass('shown');
+                    } else {
+                        // Open this row
+                        row.child(format(row.data())).show();
+                        tr.addClass('shown');
+                    }
+                    $('#audit_logs').css('table-layout','fixed');
+                    $('#audit_logs').css('width','95% !important');
+                });
+
+                $('#button-save-filter').click(function() {
+                    if ($('#save-filter-select').length) {
+                        $('#save-filter-select').dialog({
+                            width: "20%",
+                            maxWidth: "25%",
+                            title: "<?php echo __('Save filter'); ?>"
+                        });
+                        $('#info_box').html("");
+                        $('#text-id_name').val("");
+                        $.ajax({
+                            method: 'POST',
+                            url: '<?php echo ui_get_full_url('ajax.php'); ?>',
+                            dataType: 'json',
+                            data: {
+                                page: 'include/ajax/audit_log',
+                                recover_aduit_log_select: 1
+                            },
+                            success: function(data) {
+                                var options = "";
+                                $.each(data,function(key,value){
+                                    options += "<option value='"+value+"'>"+key+"</option>";
+                                });
+                                $('#overwrite_filter').html(options);
+                                $('#overwrite_filter').select2();
+                            }
+                        });
+                    } else {
+                        if (loading == 0) {
+                            loading = 1
+                            $.ajax({
+                                method: 'POST',
+                                url: '<?php echo ui_get_full_url('ajax.php'); ?>',
+                                data: {
+                                    page: 'include/ajax/audit_log',
+                                    save_filter_modal: 1,
+                                    current_filter: $('#latest_filter_id').val()
+                                },
+                                success: function(data) {
+                                    $('#save-modal-filter')
+                                        .empty()
+                                        .html(data);
+                                    loading = 0;
+                                    $('#save-filter-select').dialog({
+                                        width: "20%",
+                                        maxWidth: "25%",
+                                        title: "<?php echo __('Save filter'); ?>"
+                                    });
+                                }
+                            });
+                        }
+                    }
+                });
+
+                $('#save_filter_form-0-1, #radiobtn0002').click(function(){
+                    $('#overwrite_filter').select2();
+                });
+
+                /* Filter management */
+                $('#button-load-filter').click(function (){
+                    if($('#load-filter-select').length) {
+                        $('#load-filter-select').dialog({
+                            resizable: true,
+                            draggable: true,
+                            modal: false,
+                            closeOnEscape: true,
+                            width: "auto",
+                            title: "<?php echo __('Load filter'); ?>"
+                        });
+                        $.ajax({
+                            method: 'POST',
+                            url: '<?php echo ui_get_full_url('ajax.php'); ?>',
+                            dataType: 'json',
+                            data: {
+                                page: 'include/ajax/audit_log',
+                                recover_aduit_log_select: 1
+                            },
+                            success: function(data) {
+                                var options = "";
+                                console.log(data)
+                                $.each(data,function(key,value){
+                                    options += "<option value='"+value+"'>"+key+"</option>";
+                                });
+                                $('#filter_id').html(options);
+                                $('#filter_id').select2();
+                            }
+                        });
+                    } else {
+                        if (loading == 0) {
+                            loading = 1
+                            $.ajax({
+                                method: 'POST',
+                                url: '<?php echo ui_get_full_url('ajax.php'); ?>',
+                                data: {
+                                    page: 'include/ajax/audit_log',
+                                    load_filter_modal: 1
+                                },
+                                success: function (data){
+                                    $('#load-modal-filter')
+                                    .empty()
+                                    .html(data);
+                                    loading = 0;
+                                    $('#load-filter-select').dialog({
+                                        width: "20%",
+                                        maxWidth: "25%",
+                                        title: "<?php echo __('Load filter'); ?>"
+                                    });
+                                }
+                            });
+                        }
+                    }
+                });
+            });
+        </script>
+        <?php
+        // EOF Javascript content.
+        return ob_get_clean();
+    }
+
+
+}

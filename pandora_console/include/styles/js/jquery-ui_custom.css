@@ -1,0 +1,403 @@
+@import url(calendar.css);
+
+/* --- JQUERY-UI --- */
+
+.ui-dialog .ui-corner-all .ui-widget {
+  border-radius: 0;
+  padding: 0;
+  border: none;
+}
+
+.ui-dialog .ui-dialog-titlebar {
+  background-image: linear-gradient(144.35deg, #E0E6EE 0%, #EFF3F8 100%);
+  border-radius: 0;
+  margin: 0;
+  display: inherit;
+  text-align: left;
+  padding: 1.2em 33px 1.2em 18px !important;
+  height: 30px;
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-color-4) !important;
+  border-top-left-radius: 10px !important;
+  border-top-right-radius: 10px !important;
+}
+
+/*center ui dialog center*/
+.ui-button-text-only .ui-button-text {
+  font-size: 9pt;
+  color: #82b92e;
+}
+.ui-datepicker .ui-datepicker-title *,
+.ui-datepicker th * {
+  color: white;
+}
+.ui-datepicker .ui-datepicker-title select,
+.ui-datepicker .ui-datepicker-title option {
+  color: var(--text-color);
+  background-color: var(--secondary-color);
+}
+.ui-dialog .ui-dialog-title {
+  color: var(--text-color-4) !important;
+  font-weight: normal;
+  white-space: nowrap;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  font-size: 13pt;
+  /* top: 2px; */
+}
+
+.ui-dialog .ui-dialog-titlebar-minimize {
+  position: relative;
+  height: 20px;
+  bottom: 30%;
+  top: 0px;
+  background-color: #fff !important;
+}
+
+.ui-dialog .ui-dialog-titlebar-minimize:hover {
+  cursor: pointer;
+}
+
+.ui-dialog .ui-dialog-titlebar-disengage {
+  margin: 0px 0 0 0;
+  padding: 1px;
+  height: 20px;
+  bottom: 30%;
+  background-color: white;
+}
+
+.ui-dialog .ui-dialog-titlebar-disengage:hover {
+  cursor: pointer;
+}
+
+.ui-dialog .ui-dialog-content {
+  position: relative;
+  border: 0;
+  padding: 0.5em 1em;
+  background: none;
+  overflow: auto;
+  margin-bottom: 1em;
+}
+.ui-dialog .ui-dialog-buttonpane {
+  text-align: left;
+  border-width: 1px 0 0 0;
+  background-image: none;
+  margin-top: 0.5em;
+  padding: 0.3em 1em 0.5em 0.4em;
+}
+.ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset {
+  float: right;
+}
+.ui-dialog .ui-dialog-buttonpane button {
+  margin: 0.5em 0 0.5em 1em;
+  cursor: pointer;
+  background: white;
+  background-color: white;
+  border: 1px solid #82b92e;
+  height: 30px;
+  width: 90px;
+}
+
+button.secondaryButton {
+  background-color: #fff !important;
+  color: var(--primary-color) !important;
+  border: 2px solid var(--primary-color) !important;
+  box-shadow: none;
+}
+
+button.secondaryButton > div {
+  background-color: var(--primary-color) !important;
+}
+
+button.secondaryButton:hover {
+  color: var(--primary-color-hover) !important;
+  border-color: var(--primary-color-hover) !important;
+}
+
+button.secondaryButton:hover > div {
+  background-color: #1d7873 !important;
+}
+
+button.secondaryButton:active {
+  color: #0d312f !important;
+  border-color: #0d312f !important;
+}
+
+button.secondaryButton:active > div {
+  background-color: #0d312f !important;
+}
+
+.ui-datepicker-prev {
+  margin-top: 5px;
+  background: url(../../../images/arrow_left_green.png) no-repeat 0 0 !important;
+}
+
+.ui-datepicker-next {
+  margin-top: 5px;
+  background: url(../../../images/arrow_right_green.png) no-repeat 0 0 !important;
+}
+
+.ui-widget-content {
+  background: #fff;
+}
+.ui-state-default,
+.ui-widget-content .ui-state-default,
+.ui-widget-header .ui-state-default {
+  border-bottom: 0;
+  background: transparent;
+  font-weight: normal;
+  color: #555555;
+  border-radius: 50%;
+  text-align: center;
+  border: 2px solid #ccc;
+}
+.ui-datepicker td,
+a.ui-state-default,
+.ui-datepicker td a {
+  width: 30px !important;
+  height: 30px !important;
+}
+a.ui-state-default:hover {
+  background-color: #82b92e;
+}
+a.ui-state-default > span {
+  text-align: center;
+  margin-top: 2px;
+}
+a.ui-state-default > span:hover {
+  font-weight: bold !important;
+}
+.ui-datepicker-current-day > a {
+  background-color: #82b92e !important;
+  font-weight: bold !important;
+  border: 2px solid #000 !important;
+  border-radius: 50% !important;
+}
+.ui-corner-all,
+.ui-corner-top,
+.ui-corner-left,
+.ui-corner-tl {
+  border-top-left-radius: 0;
+}
+.ui-corner-all,
+.ui-corner-top,
+.ui-corner-right,
+.ui-corner-tr {
+  border-top-right-radius: 0;
+}
+.ui-corner-all,
+.ui-corner-bottom,
+.ui-corner-left,
+.ui-corner-bl {
+  border-bottom-left-radius: 0;
+}
+.ui-corner-all,
+.ui-corner-bottom,
+.ui-corner-right,
+.ui-corner-br {
+  border-bottom-right-radius: 0;
+}
+#ui-datepicker-div {
+  border-color: #b1b1b1;
+  background: #ffffff;
+  border-radius: 15px;
+  overflow: hidden;
+  position: absolute;
+  width: 350px !important;
+  border: 1px solid #c5c5c5;
+}
+.ui-datepicker .ui-datepicker-header {
+  position: relative;
+  padding: 0.2em 0;
+  border-radius: 15px 15px 0px 0px;
+}
+.ui-datepicker-title,
+.ui-datepicker-month,
+.ui-datepicker-year {
+  height: 30px;
+}
+.ui-datepicker-month,
+.ui-datepicker-year {
+  width: 100px !important;
+}
+.ui-datepicker-month {
+  margin-left: -10px !important;
+  margin-right: 25px !important;
+}
+.ui-widget-header {
+  background: var(--secondary-color);
+  color: #ffffff;
+}
+.ui-datepicker-calendar th {
+  background-color: var(--secondary-color);
+  padding-left: 15px;
+  text-align: initial;
+}
+.ui-datepicker-calendar th span {
+  color: var(--text-color);
+}
+.ui-widget-header {
+  height: fit-content !important;
+}
+.ui-dialog .ui-widget-header {
+  /* margin: 3px 3px 0px 3px; */
+}
+.ui_tpicker_hour,
+.ui_tpicker_minute,
+.ui_tpicker_second,
+.ui-slider-handle {
+  border: 1px solid #aaaaaa;
+  background-color: #dadada !important;
+}
+.ui-timepicker-div dd {
+  margin: 0px 15px 0px 15px;
+}
+.ui-timepicker-div .ui-datepicker-title {
+  color: var(--text-color);
+}
+.ui-timepicker-div dl {
+  margin-top: 0px !important;
+}
+.ui-datepicker-buttonpane button {
+  border-color: #b1b1b1;
+}
+.ui-datepicker-buttonpane .ui-datepicker-current {
+  margin-left: 0.2em;
+}
+.ui-dialog .ui-widget-content {
+  border: 0px;
+  border-radius: 16px;
+}
+.ui-dialog {
+  border-top-left-radius: 10px !important;
+  border-top-right-radius: 10px !important;
+  border-bottom-left-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;
+  box-shadow: 0 10px 6px 0 rgb(0 0 0 / 13%);
+  border: 1px solid #e5e9ed;
+  padding: 0 !important;
+}
+.ui-dialog-titlebar {
+  border: 0px;
+}
+
+.ui-state-focus .ui-icon,
+.ui-button:hover .ui-icon,
+.ui-button:focus .ui-icon {
+  background: none;
+}
+.ui-dialog-titlebar.ui-icon-closethick:hover,
+.ui-dialog-titlebar .ui-icon-closethick {
+  background: none;
+}
+.ui-button.ui-corner-all.ui-widget.ui-button-icon-only.ui-dialog-titlebar-close,
+.ui-button.ui-corner-all.ui-widget.ui-button-icon-only.ui-dialog-titlebar-close:hover {
+  background-color: var(--text-color-4);
+  mask: url(../../../images/close_dialog.svg) no-repeat right / contain;
+  -webkit-mask: url(../../../images/close_dialog.svg) no-repeat right / contain;
+}
+
+.ui-dialog-title {
+  color: #ffffff;
+  font-size: 9pt;
+}
+
+a.ui-button:active,
+.ui-button:active,
+.ui-button.ui-state-active:hover,
+.ui-state-focus .ui-widget-content,
+.ui-state-focus .ui-widget-header,
+.ui-state-focus .ui-button:hover,
+.ui-button:focus {
+  background: transparent;
+  border: none;
+}
+
+.ui-state-active,
+.ui-widget-content .ui-state-active,
+.ui-widget-header .ui-state-active {
+  border: 1px solid #aaaaaa;
+  border-bottom: 0;
+  background: var(--secondary-color);
+  font-weight: normal;
+  color: #212121;
+}
+.ui-state-active a,
+.ui-state-active a:link,
+.ui-state-active a:visited {
+  color: #212121;
+}
+
+ul.ui-front {
+  z-index: 1000000;
+  padding-right: 0px;
+}
+
+ul.ui-front li {
+  padding: 3px;
+}
+
+ul.ui-front li:hover {
+  background-color: #e1e3e1;
+}
+
+ul.ui-front li a.ui-menu-item-wrapper {
+  background: transparent;
+  border: none;
+}
+
+ul.ui-front li a.ui-menu-item-wrapper span {
+  padding-left: 5px;
+}
+
+ul.ui-front li a.ui-menu-item-wrapper:hover {
+  text-decoration: none;
+}
+
+input[type="submit"].ui-button-dialog {
+  margin: 0.5em 1em 0.5em 0;
+  cursor: pointer;
+  background: white;
+  background-color: white;
+  color: #82b92e;
+  text-align: center;
+  border: 1px solid #82b92e;
+  height: 30px;
+  width: 90px;
+}
+
+.ui-priority-primary {
+  background-color: var(--primary-color) !important;
+  color: #fff !important;
+  border: 2px solid var(--primary-color) !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+}
+
+.ui-priority-secondary {
+  background-color: var(--secondary-color) !important;
+  color: var(--primary-color) !important;
+  border: 2px solid var(--primary-color) !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+}
+
+.ui-timepicker-div > dl dt,
+.ui-timepicker-div > dl dd {
+  font-weight: bold !important;
+}
+
+.ui-timepicker-div > dl dt,
+.ui_tpicker_time {
+  margin-left: 10px !important;
+}
+
+.ui-widget-overlay {
+  background: #aaa !important;
+  opacity: 0.3 !important;
+  z-index: 1114;
+}

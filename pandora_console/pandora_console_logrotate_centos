@@ -1,0 +1,13 @@
+# Centos, Redhat, Fedora
+/var/www/html/pandora_console/log/audit.log
+/var/www/html/pandora_console/log/cron.log
+/var/www/html/pandora_console/log/console.log {
+        weekly
+        missingok
+        size 100000
+        rotate 3
+        maxage 15
+        compress
+        notifempty
+        create 644 apache root
+}

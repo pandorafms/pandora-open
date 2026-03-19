@@ -1,0 +1,172 @@
+#!/usr/bin/perl
+###############################################################################
+#
+# Copyright (c) 2009  Ramon Novoa  <rnovoa@artica.es>
+# Copyright (c) 2009-2023 Pandora Open.
+#
+# pandora_df	Retrieve filesystem disk usage. By default information for all
+#		filesystems is returned, but one or more filesystems may be
+#		specified as command line parameters. If parameter start with
+#		a '-', the filesystem is excluded from results.
+#
+# Sample usage:	./pandora_df tmpfs /dev/sda1
+#
+# Set the first parameter as "-r" to use regular expressions in name match
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.	
+#
+###############################################################################
+
+use strict;
+use warnings;
+
+# Retrieve information from all filesystems
+my $all_filesystems = 0;
+
+# Regex flag
+my $regex_mode = 0;
+my $inode_mode = 0;
+
+# Exclusion
+my @exclude_fs = ();
+my $cmd = undef;
+
+
+sub in_array {
+	my ($array, $value) = @_;
+
+	if (!defined($value)) {
+		return 0;
+	}
+
+	my %params = map { $_ => 1 } @{$array};
+	if (exists($params{$value})) {
+		return 1;
+	}
+	return 0;
+}
+
+sub check_re($$){
+	my $item  = shift;
+	my $array = shift;
+
+	foreach my $check (@{$array}){
+		if ($item =~ /$check/){
+			return 1;
+		}
+	}
+	return undef;
+}
+
+sub check_in($$){
+	my $filesystems = shift;
+	my $fs = shift;
+
+	if(($regex_mode == 0) || ( !defined ($regex_mode))) {
+		return defined ($filesystems->{$fs});
+	}
+	# check if matches any key
+	my @keys = keys %{$filesystems};
+	return check_re($fs, \@keys);
+}
+
+#
+#  MAIN
+#
+
+# Check command line parameters
+if ($#ARGV < 0) {
+	$all_filesystems = 1;
+}
+
+while ($#ARGV >= 0) {
+	my $param = shift @ARGV;
+	if ($param eq '-r') {
+		$regex_mode = 1;
+		shift @ARGV;
+	}
+	elsif ($param eq '-i') {
+		$inode_mode = 1;
+	}
+	elsif ($param eq '-exclude_fs') {
+		my $_tmp = shift @ARGV;
+		chomp ($_tmp);
+		@exclude_fs = split /,/, $_tmp;
+	}
+	elsif ($param eq '-custom_cmd') {
+		$cmd = shift @ARGV;
+		chomp ($cmd);
+	}
+}
+
+# Parse command line parameters
+my %filesystems;
+my %excluded_filesystems;
+my $onlyexclude = 1;
+foreach my $fs (@ARGV) {
+	if (substr($fs,0,1) eq '-') {
+		$excluded_filesystems{substr($fs,1,)} = '-1%';
+	} else {
+		$filesystems{$fs} = '-1%';
+		$onlyexclude = 0;
+	}
+}
+
+if ($onlyexclude) {
+	$all_filesystems = 1;
+}
+
+# Retrieve filesystem information
+# -P use the POSIX output format for portability
+
+
+$cmd = 'df -PT' unless defined($cmd);
+
+if ($inode_mode > 0) {
+	$cmd = 'df -PTi';
+}
+
+my @df = `$cmd`;
+shift (@df);
+
+# No filesystems? Something went wrong.
+if ($#df < 0) {
+	exit 1;
+}
+
+my %out;
+# Parse filesystem usage
+foreach my $row (@df) {
+	my @columns = split (' ', $row);
+	exit 1 if ($#columns < 5);
+
+	next if (in_array(\@exclude_fs, $columns[1]) > 0);
+
+	if (check_in (\%filesystems,$columns[0])
+	|| ($all_filesystems == 1 && !check_in(\%excluded_filesystems,$columns[0])) ){
+		$out{$columns[0]} = $columns[5] ;
+	}
+}
+
+while (my ($filesystem, $use) = each (%out)) {
+
+	# Remove the trailing %
+	chop ($use);
+
+	# Print module output
+	print "<module>\n";
+	print "<name><![CDATA[" . ($inode_mode > 0 ? 'Inodes:' : '') . $filesystem . "]]></name>\n";
+	print "<type><![CDATA[generic_data]]></type>\n";
+	print "<data><![CDATA[" . $use . "]]></data>\n";
+	print "<description><![CDATA[% of usage in this volume]]></description>\n";
+	print "</module>\n";
+}
+
+exit 0;

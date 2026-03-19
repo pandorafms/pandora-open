@@ -1,0 +1,388 @@
+.rules div {
+  display: inline-block;
+}
+
+#rules {
+  display: block;
+}
+
+li#li-buttons-alert-list > div {
+  margin-left: 10px;
+}
+
+ul.sample li {
+  padding-bottom: 1em;
+}
+ul.sample li:last-child {
+  padding-bottom: 0;
+}
+
+#rule-builder .rule-builder-actions li {
+  display: inline;
+  width: auto;
+}
+
+li#li-filters_show_action_alerts > label,
+li#li-buttons-alert-list > label,
+li#li-filters-alert-list > label {
+  width: initial;
+}
+
+form#advanced_filters_alert ul li label,
+form#general_filters_alert ul li label {
+  width: 150px;
+}
+
+#rules.flex-row label {
+  flex: 1 1 70px;
+}
+
+li#li-from-to-threshold > label:not(:first-child),
+li#li-time-from-to > label:not(:first-child) {
+  width: initial;
+  margin-right: 15px;
+}
+
+div.rule-builder-actions {
+  width: 100%;
+  z-index: 0;
+}
+div.rule-builder-actions ul {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  align-content: center;
+}
+
+#rule-builder .rule-builder-actions li label {
+  width: 0;
+}
+
+div.white_box {
+  min-width: 800px;
+}
+
+#rules,
+ul.sample {
+  margin-bottom: 2em;
+  flex: 1 1 300px;
+}
+
+#rules.flex-row div {
+  flex: 10 1 200px;
+}
+
+span.rule-title {
+  font-weight: normal;
+  font-size: 2em;
+  text-align: center;
+  display: block;
+  margin-bottom: 0.8em;
+  width: 100%;
+}
+
+form#conditions_filters_alert ul li label:first-child {
+  width: 300px;
+}
+
+li#li-name-group input {
+  margin-right: 50px;
+}
+
+li#li-description textarea {
+  flex: 1 1 auto;
+}
+
+li#li-from-to-threshold > input,
+li#li-time-from-to > input {
+  margin-right: 15px;
+}
+.mode_table_firing table.info_table thead tr th img {
+  padding: 10px;
+  vertical-align: middle;
+}
+form#advanced_filters_alert textarea {
+  flex: 1 1 auto;
+  height: 5em;
+  min-height: 5em;
+  width: 2em;
+}
+
+form#advanced_filters_alert ul li label img {
+  margin-bottom: -2px;
+  margin-left: 5px;
+}
+
+/*DRAG DROP*/
+#threshold_manual,
+#threshold_default {
+  /*TODO: UGLY*/
+  width: initial !important;
+  margin-right: 10px;
+}
+
+img.handle-alerts {
+  width: 20px;
+  cursor: move;
+}
+
+.content {
+  width: 80%;
+  min-height: 4em;
+  padding-bottom: 1em;
+}
+ul.sample {
+  max-width: 50%;
+  flex-grow: 1;
+  justify-content: space-between;
+  min-width: 300px;
+}
+
+div.target {
+  flex-grow: 1;
+  flex-basis: auto;
+  margin-left: 3em;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+}
+div.target.flex {
+  border: 2px dashed #ddd;
+  margin-left: 0em;
+  margin-top: 10px;
+  padding: 1em;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  height: fit-content;
+}
+
+.fields,
+.operators,
+.variables,
+.modifiers,
+.nexos,
+.blocks {
+  cursor: move;
+}
+#drop_mssg {
+  position: relative;
+  top: 25%;
+  display: block;
+  margin: 0 auto;
+  font-size: 3em;
+  color: #aaa;
+  overflow: hidden;
+  background: #fff;
+  text-align: center;
+}
+div#rules::after {
+  position: relative;
+  display: block;
+  margin: 2em auto;
+  font-size: 2.5em;
+  color: #aaa;
+  overflow: hidden;
+  background: transparent;
+  text-align: center;
+  height: 100px;
+}
+div#rules.cleanup::after {
+  content: none;
+}
+
+div#rules.show {
+  box-shadow: 0 0 15px -5px #424242;
+  border: 1px solid #ddd;
+}
+.field {
+  display: inline-block;
+  border-radius: 10px;
+  padding: 5px;
+  font-size: 1.2em;
+  padding-left: 1em;
+  padding-right: 1em;
+  margin: 0 0.5em 0.5em 0px;
+  color: #fff;
+  font-weight: 600;
+  background-color: #333;
+  word-break: break-all;
+  height: fit-content;
+}
+
+.field.opacityElements {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+.field.disabledElements {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+.log {
+  background-color: #638460;
+}
+.event {
+  background-color: #587cff;
+}
+
+.operator {
+  background-color: #908787;
+}
+
+.variable {
+  background-color: #82b92e;
+}
+
+.variable:empty::before {
+  content: "empty";
+  font-style: italic;
+}
+
+.modifier {
+  background-color: #cba9d2;
+}
+
+.nexo {
+  background-color: #424242;
+}
+
+.inEdit {
+  background-color: #888;
+}
+
+.info-container {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.info-item {
+  width: 100%;
+}
+
+.info-item table.info_table thead tr th {
+  min-width: 150px;
+  text-align: center;
+}
+
+.info-item table.info_table tbody tr {
+  border-bottom: none;
+}
+
+.info-container table.no-class tbody tr td {
+  padding: 10px;
+}
+
+.mode_table_firing {
+  margin-top: 20px;
+}
+
+.mode_table_firing table.info_table thead tr th {
+  font-weight: bolder;
+}
+
+#rules select.click-list-elements {
+  border-radius: 0px;
+  background-color: #424242;
+  border: 0px;
+  color: #fff;
+  font-weight: 600;
+}
+#rules select.click-list-elements.fields-elements-log {
+  background-color: #638460;
+}
+#rules select.click-list-elements.fields-elements-event {
+  background-color: #587cff;
+}
+
+#rules select.click-list-elements:focus {
+  outline-color: transparent;
+}
+
+#icalendar-special-days {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid #e1e1e1;
+  border-radius: 5px;
+  padding: 20px 50px;
+}
+
+#icalendar-special-days ul.wizard {
+  flex: 0;
+}
+
+#icalendar-special-days ul.wizard:first-child {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-right: 80px;
+}
+
+.note-special-day {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  align-content: center;
+}
+
+.note-special-day div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  align-content: center;
+}
+
+.note-special-day div a.tip {
+  margin: 0px;
+  margin-right: 2px;
+}
+
+.note-special-day div a.tip > img {
+  margin: 0px;
+}
+
+form#icalendar-special-days.calendar-upload-form {
+  border: 0px;
+  padding: 0px;
+}
+
+form#icalendar-special-days.calendar-upload-form > ul {
+  align-items: flex-start !important;
+}
+
+form#icalendar-special-days.calendar-upload-form > ul > li > label {
+  font-size: 13px;
+  line-height: 16px;
+  margin-bottom: 10px;
+}
+
+.special-days-thead > thead > tr > th:not(.header) {
+  border: 1px solid #e2e2e2;
+}
+
+.special-days-thead > thead > tr > th.header {
+  border: 0px;
+  border-bottom: 1px solid #878787;
+}
+
+.special-days-thead > thead > tr > th.c0 {
+  border-left: 1px solid #e2e2e2;
+}
+
+.special-days-thead > thead > tr > th.c6 {
+  border-right: 1px solid #e2e2e2;
+}

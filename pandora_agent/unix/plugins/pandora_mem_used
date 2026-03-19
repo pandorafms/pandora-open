@@ -1,0 +1,89 @@
+#!/usr/bin/perl
+
+# Returns memory USED
+# (c) 2017 Sancho Lerena <slerena@artica.es>
+
+use POSIX;
+
+my $STOTAL=`vmstat -s | grep "total swap" | awk  '{ print $1 } '`;
+my $SUSED=`vmstat -s | grep "free swap" | awk  '{ print $1 } '`;
+my $SFREE;
+eval {
+$SFREE=($SUSED/$STOTAL)*100;
+};
+if ($@) {
+        $SFREE = 100;
+}
+
+$SFREE = floor($SFREE);
+$FREEP = floor($FREEP);
+
+# Available memory as FreeMemory + Cached + SwapCached.
+my $freemem=kb_to_b(`cat /proc/meminfo | grep 'MemFree' | awk '{ print \$2 } '`);
+my $cached=kb_to_b(`cat /proc/meminfo | grep '^Cached:' | awk '{ print \$2 } '`);
+my $cachedswap=kb_to_b(`cat /proc/meminfo | grep '^SwapCached:' | awk '{ print \$2 }'`);
+my $total_meminfo=kb_to_b(`cat /proc/meminfo | grep 'MemTotal:' | awk '{ print \$2 }'`);
+my $available_new=kb_to_b(`cat /proc/meminfo | grep 'MemAvailable:' | awk '{ print \$2 }'`);
+my $available;
+if ($available_new == 0){
+        $available=$freemem+$cached+$cachedswap;
+}else{
+        $available=$available_new;
+}
+my $available_percent = floor(($available / $total_meminfo)*100);
+
+my $USED = 100 - $available_percent;
+my $SWAP_USED = 100 - $SFREE;
+
+my $total_swap = kb_to_b(`cat /proc/meminfo | grep 'SwapTotal' | awk '{ print \$2 } '`);
+my $free_swap = kb_to_b(`cat /proc/meminfo | grep 'SwapFree' | awk '{ print \$2 } '`);
+my $used_mem = $total_meminfo - $available;
+my $min_critical_swap = $total_swap * 0.95;
+my $min_critical_mem = $total_meminfo * 0.95;
+my $swap_used = $total_swap - $free_swap; 
+
+print "<module>\n";
+print "<name><![CDATA[Memory_Used]]></name>\n";
+print "<type><![CDATA[generic_data]]></type>\n";
+print "<description><![CDATA[Used memory in %]]></description>\n";
+print "<unit><![CDATA[%]]></unit>\n";
+print "<min_critical><![CDATA[95]]></min_critical>\n";
+print "<data><![CDATA[$USED]]></data>\n";
+print "<module_group><![CDATA[System]]></module_group>\n";
+print "</module>\n";
+
+print "<module>\n";
+print "<name><![CDATA[Swap_Used]]></name>\n";
+print "<type><![CDATA[generic_data]]></type>\n";
+print "<description><![CDATA[Used Swap in %]]></description>\n";
+print "<unit><![CDATA[%]]></unit>\n";
+print "<min_critical><![CDATA[95]]></min_critical>\n";
+print "<data><![CDATA[$SWAP_USED]]></data>\n";
+print "<module_group><![CDATA[System]]></module_group>\n";
+print "</module>\n";
+
+print "<module>\n";
+print "<name><![CDATA[Memory_Used Bytes]]></name>\n";
+print "<type><![CDATA[generic_data]]></type>\n";
+print "<description><![CDATA[Used memory in Bytes]]></description>\n";
+print "<unit><![CDATA[Bytes]]></unit>\n";
+print "<min_critical><![CDATA[$min_critical_mem]]></min_critical>\n";
+print "<data><![CDATA[$used_mem]]></data>\n";
+print "<module_group><![CDATA[System]]></module_group>\n";
+print "</module>\n";
+
+print "<module>\n";
+print "<name><![CDATA[Swap_Used Bytes]]></name>\n";
+print "<type><![CDATA[generic_data]]></type>\n";
+print "<description><![CDATA[Used Swap in Bytes]]></description>\n";
+print "<unit><![CDATA[Bytes]]></unit>\n";
+print "<min_critical><![CDATA[$min_critical_swap]]></min_critical>\n";
+print "<data><![CDATA[$swap_used]]></data>\n";
+print "<module_group><![CDATA[System]]></module_group>\n";
+print "</module>\n";
+
+sub kb_to_b {
+    my $kb = shift;  
+    my $b = $kb * 1024;  
+    return sprintf("%.1f", $b); 
+}

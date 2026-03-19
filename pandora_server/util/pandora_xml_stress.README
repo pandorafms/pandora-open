@@ -1,0 +1,16 @@
+Pandora Open XML Stress
+======================
+
+This is a small script that generates XML data files like the ones sent by
+Pandora Open agents.
+
+The scripts reads agent names from a text file and generates XML data files for
+each agent according to a configuration file, where modules are defined as
+templates.
+
+Modules are filled with random data. An initial value and the probability of
+the module data changing may be specified.
+
+Run the script like this:
+
+	./pandora_xml_stress <configuration file>

@@ -1,0 +1,114 @@
+.container-downloads {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px 125px;
+  border-radius: 25px;
+  background-image: url(../../images/downloads_links/cover-downloads-agents.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position-x: center;
+}
+
+.container-downloads-satellite {
+  background-image: url(../../images/downloads_links/cover-downloads-satellite.jpg);
+}
+
+.card-downloads {
+  height: 100%;
+  max-width: 770px;
+  min-width: 500px;
+  min-height: 300px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color-4);
+  background-color: var(--secondary-color);
+  padding: 20px;
+}
+
+.card-downloads .card-downloads-title {
+  color: var(--text-color-2);
+  font-size: 40px;
+  line-height: 48px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.card-downloads .card-downloads-msg {
+  color: var(--text-color-3);
+  font-size: 15px;
+  line-height: 24px;
+  /*width: 760px;*/
+}
+
+.card-downloads .card-downloads-msg a {
+  color: var(--primary-color);
+  font-size: 15px;
+  line-height: 24px;
+}
+
+.card-downloads .card-downloads-links {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.card-downloads .card-downloads-links .links-dowloads-agents {
+  background-color: #f8f8f8;
+  border: 1px solid #e5e9ed;
+  border-radius: 10px;
+  padding: 22px;
+  width: 50%;
+}
+
+.card-downloads
+  .card-downloads-links
+  .links-dowloads-agents
+  .links-dowloads-agents-title {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.card-downloads
+  .card-downloads-links
+  .links-dowloads-agents
+  .links-dowloads-agents-title
+  div {
+  font-weight: bold;
+  color: var(--text-color-2);
+  font-size: 18px;
+  line-height: 20px;
+}
+
+.card-downloads .card-downloads-links .links-dowloads-agents img {
+  margin-right: 10px;
+}
+
+.card-downloads
+  .card-downloads-links
+  .links-dowloads-agents
+  .links-dowloads-agents-title
+  img {
+  width: 20px;
+}
+
+.card-downloads .card-downloads-links .links-dowloads-agents ul li a {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.card-downloads .card-downloads-links .links-dowloads-agents ul li a div {
+  color: var(--primary-color);
+  font-size: 15px;
+  line-height: 30px;
+}
+
+.card-downloads .card-downloads-links .satellite-buttons-links {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}

@@ -1,0 +1,19 @@
+# Executable files.
+*.exe filter=lfs diff=lfs merge=lfs -text
+# Fonts.
+*.ttf filter=lfs diff=lfs merge=lfs -text
+*.otf filter=lfs diff=lfs merge=lfs -text
+*.woff filter=lfs diff=lfs merge=lfs -text
+# Translations.
+*.mo filter=lfs diff=lfs merge=lfs -text
+# Images.
+*.gif filter=lfs diff=lfs merge=lfs -text
+*.ico filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.svg filter=lfs diff=lfs merge=lfs -text
+# Other.
+*.dat filter=lfs diff=lfs merge=lfs -text
+*.swf filter=lfs diff=lfs merge=lfs -text
+**/tz_world.txt filter=lfs diff=lfs merge=lfs -text
+**/tz_islands.txt filter=lfs diff=lfs merge=lfs -text

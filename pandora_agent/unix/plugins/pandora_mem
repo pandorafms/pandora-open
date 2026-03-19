@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+
+# Pandora Open Plugin to get memory information on Linux
+# (c) 2014 Sancho Lerena <slerena@artica.es
+
+use POSIX;
+
+my $TOTAL=`vmstat -s | grep "total memory" | awk  '{ print $1 } '`;
+my $FREE=`vmstat -s | grep "free memory" | awk  '{ print $1 } '`;
+my $FREEP;
+eval {
+$FREEP=($FREE/$TOTAL)*100; 
+};
+if ($@) {
+	$FREEP = 0;
+}
+my $STOTAL=`vmstat -s | grep "total swap" | awk  '{ print $1 } '`;
+my $SUSED=`vmstat -s | grep "free swap" | awk  '{ print $1 } '`;
+my $SFREE;
+eval {
+$SFREE=($SUSED/$STOTAL)*100;
+};
+if ($@) {
+	$SFREE = 0;
+}
+
+$SFREE = floor($SFREE); 
+$FREEP = floor($FREEP);
+
+# Added 30/Dec/2014, slerena
+# Available memory as FreeMemory + Cached + SwapCached.
+my $freemem=`cat /proc/meminfo | grep 'MemFree' | awk '{ print \$2 } '`;
+my $cached=`cat /proc/meminfo | grep '^Cached:' | awk '{ print \$2 } '`;
+my $cachedswap=`cat /proc/meminfo | grep '^SwapCached:' | awk '{ print \$2 }'`;
+my $total_meminfo=`cat /proc/meminfo | grep 'MemTotal:' | awk '{ print \$2 }'`;
+my $available_new=`cat /proc/meminfo | grep 'MemAvailable:' | awk '{ print \$2 }'`;
+my $available;
+if ($available_new == 0){
+        $available=$freemem+$cached+$cachedswap;
+}else{
+        $available=$available_new;
+}
+my $available_percent = floor(($available / $total_meminfo)*100);
+
+my $USED = 100 - $available_percent;
+
+print "<module>\n";
+print "<name><![CDATA[FreeMemory]]></name>\n";
+print "<type><![CDATA[generic_data]]></type>\n";
+print "<description><![CDATA[Free memory %. Note most linux use 99% of available memory by default, check Availablememory module for more accurate information on available physical memory on system]]></description>\n";
+print "<unit><![CDATA[%]]></unit>\n";
+print "<min_critical><![CDATA[0]]></min_critical>\n";
+print "<max_critical><![CDATA[2]]></max_critical>\n";
+print "<data><![CDATA[$FREEP]]></data>\n";
+print "</module>\n";
+
+print "<module>\n";
+print "<name><![CDATA[FreeSwap]]></name>\n";
+print "<type><![CDATA[generic_data]]></type>\n";
+print "<description><![CDATA[Free Swap %]]></description>\n";
+print "<unit><![CDATA[%]]></unit>\n";
+print "<min_critical><![CDATA[0]]></min_critical>\n";
+print "<max_critical><![CDATA[5]]></max_critical>\n";
+print "<data><![CDATA[$SFREE]]></data>\n";
+print "</module>\n";
+
+print "<module>\n";
+print "<name><![CDATA[AvailableMemory]]></name>\n";
+print "<type><![CDATA[generic_data]]></type>\n";
+print "<description><![CDATA[Available Physical Memory % (Free+Cached+CachedSwap)]]></description>\n";
+print "<unit><![CDATA[%]]></unit>\n";
+print "<min_critical><![CDATA[0]]></min_critical>\n";
+print "<max_critical><![CDATA[10]]></max_critical>\n";
+print "<data><![CDATA[$available_percent]]></data>\n";
+print "</module>\n";

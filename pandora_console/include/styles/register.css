@@ -1,0 +1,20 @@
+div.submit_buttons_container {
+  position: relative;
+  bottom: 0px;
+  width: 95%;
+  height: 4em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.license_text {
+  width: 95%;
+  overflow-y: auto;
+  text-align: justify;
+  margin: 1em auto;
+}
+
+div.submit_buttons_container > div {
+  display: initial;
+}

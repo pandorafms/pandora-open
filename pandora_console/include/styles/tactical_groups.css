@@ -1,0 +1,61 @@
+.tactical_group_left_column {
+  vertical-align: top;
+  min-width: 30em;
+  width: 30%;
+  padding-top: 0px;
+}
+.tactical_group_right_column {
+  width: 40%;
+  vertical-align: top;
+  min-width: 30em;
+  padding-top: 0px;
+}
+rect {
+  cursor: pointer;
+}
+.info-agent {
+  width: 100%;
+  max-height: 400px;
+}
+.info-agent table {
+  width: 100%;
+}
+#modal-info-agent {
+  display: none;
+}
+#list_agents_tactical_wrapper {
+  max-height: 600px;
+}
+.graph-distribution-so {
+  margin-top: 55px;
+}
+#list_agents_tactical_wrapper .dataTables_length {
+  margin-bottom: 10px;
+}
+
+#tactic_view {
+  display: flex;
+}
+#tactic_view .tactical_group_left_column:first-child {
+  margin-right: 12px;
+}
+#tactic_view > .tactical_group_right_column {
+  margin-left: 5px;
+}
+#tactic_view .tactical_group_left_columns {
+  display: flex;
+}
+@media (max-width: 1380px) {
+  #tactic_view .tactical_group_left_columns {
+    width: 100%;
+  }
+  .tactical_group_left_column {
+    width: 50%;
+  }
+  .tactical_group_right_column {
+    width: 100%;
+  }
+  #tactic_view {
+    flex-wrap: wrap;
+  }
+}

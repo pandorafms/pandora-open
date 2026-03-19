@@ -1,0 +1,63 @@
+/var/log/pandora/pandora_agent.log 
+/var/log/pandora/pandora_server.log 
+/var/log/pandora/web_socket.log
+/var/log/pandora/pandora_server.error {
+	weekly
+	missingok
+	size 300000
+	rotate 3
+	maxage 90
+	compress
+	notifempty
+        copytruncate
+}
+
+# DEBIAN / UBUNTU 
+/var/www/pandora_console/log/console.log {
+	weekly
+        missingok
+        size 100000
+        rotate 3
+        maxage 15
+        compress
+        notifempty
+        create 644 www-data www-data
+}
+
+# OpenSUSE, SLES
+/srv/www/htdocs/pandora_console/log/console.log {
+	weekly
+	missingok
+	size 100000
+	rotate 3
+	maxage 15
+	compress
+	notifempty
+	create 644 wwwrun www
+}
+
+# Centos, Redhat, Fedora
+/var/www/html/pandora_console/log/console.log {
+        weekly
+        missingok
+        size 100000
+        rotate 3
+        maxage 15
+        compress
+        notifempty
+        create 644 apache root
+}
+
+/var/log/pandora/pandora_snmptrap.log {
+	su pandora apache
+	weekly
+	missingok
+	size 500000
+	rotate 1
+	maxage 30
+	notifempty
+	postrotate
+	pandora_manage /etc/pandora/pandora_server.conf --start_snmptrapd > /dev/null 2>/dev/null || true
+	endscript
+	copytruncate
+}

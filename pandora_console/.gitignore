@@ -1,0 +1,17 @@
+attachment/networkmap_*
+attachment/mibs/.index
+attachment/pandora_chat.global_counter.txt
+attachment/pandora_chat.user_list.json.txt
+attachment/collection
+attachment/files_repo
+include/config.php
+pandora_console.log
+log/console.log
+log/cron.log
+enterprise
+*.bak
+audit.log
+log/audit.log
+install_old.php
+*.map
+*.js.map

@@ -1,0 +1,518 @@
+<?php
+
+/**
+ * Pandora FMS OpenSource
+ * Copyright (c) 2004-2025 Pandora FMS Community
+ * https://pandorafms.org
+ *
+ * Este programa es software libre; puedes redistribuirlo y/o modificarlo bajo
+ * los términos de la Licencia Pública General de GNU publicada por la Free
+ * Software Foundation para la versión 2. Este programa se distribuye con la
+ * esperanza de que sea útil, pero SIN NINGUNA GARANTÍA; ni siquiera con la
+ * garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO
+ * PARTICULAR. Consulta la Licencia Pública General de GNU para más detalles.
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation for version 2. This program is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY; without any implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * Эта программа является свободным программным обеспечением; вы можете
+ * распространять и/или изменять её в соответствии с условиями Стандартной
+ * общественной лицензии GNU (GPL), опубликованной Фондом свободного
+ * программного обеспечения (Free Software Foundation) для версии 2. Эта
+ * программа распространяется в надежде, что она будет полезной, НО БЕЗ
+ * КАКИХ-ЛИБО ГАРАНТИЙ, даже без подразумеваемой гарантии КОММЕРЧЕСКОЙ
+ * ПРИГОДНОСТИ или ПРИГОДНОСТИ ДЛЯ КОНКРЕТНОЙ ЦЕЛИ. Подробнее см. Стандартную
+ * общественную лицензию GNU.
+ *
+ * Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou le
+ * modifier selon les termes de la Licence Publique Générale GNU, publiée par
+ * la Free Software Foundation pour la version 2. Ce programme est distribué
+ * dans l'espoir qu'il sera utile, mais SANS AUCUNE GARANTIE, même sans la
+ * garantie implicite de QUALITÉ MARCHANDE ou D'ADÉQUATION À UN USAGE
+ * PARTICULIER. Consultez la Licence Publique Générale GNU pour plus de détails.
+ *
+ * このプログラムはフリーソフトウェアです。GNU一般公衆利用許諾書
+ * （Free Software Foundationによって公開されたバージョン2）の条件の下で、
+ * 自由に再配布および改変することができます。本プログラムは有用であることを
+ * 願って配布されますが、いかなる保証もありません。商品性や特定目的への適合性の
+ * 保証も含まれません。詳しくはGNU一般公衆利用許諾書をご覧ください。
+ * ============================================================================
+ */
+
+global $config;
+
+require_once $config['homedir'].'/include/functions_alerts.php';
+require_once $config['homedir'].'/include/functions_users.php';
+require_once $config['homedir'].'/include/functions_groups.php';
+check_login();
+
+if (is_ajax()) {
+    $get_template_tooltip = (bool) get_parameter('get_template_tooltip');
+
+    if ($get_template_tooltip) {
+        $id_template = (int) get_parameter('id_template');
+        $template = alerts_get_alert_template($id_template);
+        if ($template === false) {
+            return;
+        }
+
+        echo '<h3 style="background-color: #14524f">'.$template['name'].'</h3>';
+        echo html_print_image('images/info.svg', true, ['class' => 'invert_filter']);
+        echo ui_print_alert_template_example($template['id'], true, true, false);
+        echo '<br />';
+        echo '<br />';
+        echo '<strong>'.__('Type').': </strong>';
+        echo alerts_get_alert_templates_type_name($template['type']);
+
+        echo '<br />';
+
+        if ($template['description'] != '') {
+            echo '<strong>'.__('Description').':</strong><br />';
+            echo $template['description'];
+            echo '<br />';
+        }
+
+        echo '<strong>'.__('Priority').':</strong> ';
+        echo get_priority_name($template['priority']);
+        echo '<br />';
+
+        if ($template['monday'] && $template['tuesday']
+            && $template['wednesday'] && $template['thursday']
+            && $template['friday'] && $template['saturday']
+            && $template['sunday']
+        ) {
+            // Everyday
+            echo '<strong>'.__('Everyday').'</strong><br />';
+        } else {
+            $days = [
+                'monday'    => __('Monday'),
+                'tuesday'   => __('Tuesday'),
+                'wednesday' => __('Wednesday'),
+                'thursday'  => __('Thursday'),
+                'friday'    => __('Friday'),
+                'saturday'  => __('Saturday'),
+                'sunday'    => __('Sunday'),
+            ];
+
+            echo '<strong>'.__('Days').'</strong>: '.__('Every').' ';
+            $actives = [];
+            foreach ($days as $day => $name) {
+                if ($template[$day]) {
+                    array_push($actives, $name);
+                }
+            }
+
+            $last = array_pop($actives);
+            if (count($actives)) {
+                echo implode(', ', $actives);
+                echo ' '.__('and').' ';
+            }
+
+            echo $last;
+            echo '<br />';
+        }
+
+        echo '<strong>'.__('Time threshold').': </strong>';
+        echo human_time_description_raw($template['time_threshold']);
+        echo '<br />';
+
+        if ($template['time_from'] != $template['time_to']) {
+            echo '<strong>'.__('From').'</strong> ';
+            echo $template['time_from'];
+            echo ' <strong>'.__('to').'</strong> ';
+            echo $template['time_to'];
+            echo '<br />';
+        }
+
+        return;
+    }
+
+    return;
+}
+
+if (! check_acl($config['id_user'], 0, 'LM')) {
+    db_pandora_audit(
+        AUDIT_LOG_ACL_VIOLATION,
+        'Trying to access Alert Management'
+    );
+    include 'general/noaccess.php';
+    exit;
+}
+
+$update_template = (bool) get_parameter('update_template');
+$delete_template = (bool) get_parameter('delete_template');
+$pure = get_parameter('pure', 0);
+$sec = 'galertas';
+
+// This prevents to duplicate the header in
+// case delete_templete action is performed.
+if (!$delete_template) {
+    // Header.
+    ui_print_standard_header(
+        __('Alerts'),
+        'images/gm_alerts.png',
+        false,
+        '',
+        true,
+        [],
+        [
+            [
+                'link'  => '',
+                'label' => __('Alerts'),
+            ],
+            [
+                'link'  => '',
+                'label' => __('Alert templates'),
+            ],
+        ]
+    );
+}
+
+if ($update_template) {
+    $id = (int) get_parameter('id');
+
+    $recovery_notify = (bool) get_parameter('recovery_notify');
+
+    $fields_recovery = [];
+    for ($i = 1; $i <= $config['max_macro_fields']; $i++) {
+        $values['field'.$i] = (string) get_parameter('field'.$i);
+        $values['field'.$i.'_recovery'] = ($recovery_notify) ? (string) get_parameter('field'.$i.'_recovery') : '';
+    }
+
+    $values['recovery_notify'] = $recovery_notify;
+    $result = alerts_update_alert_template($id, $values);
+
+    ui_print_result_message(
+        $result,
+        __('Successfully updated'),
+        __('Could not be updated')
+    );
+}
+
+// If user tries to delete a template with group=ALL
+// then must have "PM" access privileges.
+if ($delete_template) {
+    $id = get_parameter('id');
+    $al_template = alerts_get_alert_template($id);
+
+    if ($al_template !== false) {
+        // If user tries to delete a template with group=ALL
+        // then must have "PM" access privileges.
+        if ($al_template['id_group'] == 0) {
+            if (! check_acl($config['id_user'], 0, 'PM')) {
+                db_pandora_audit(
+                    AUDIT_LOG_ACL_VIOLATION,
+                    'Trying to access Alert Management'
+                );
+                include 'general/noaccess.php';
+                exit;
+            } else {
+                ui_print_page_header(
+                    __('Alerts').' &raquo; '.__('Alert templates'),
+                    'images/gm_alerts.png',
+                    false,
+                    'alerts_config',
+                    true
+                );
+            }
+        } else {
+            $own_info = get_user_info($config['id_user']);
+            if ($own_info['is_admin'] || check_acl($config['id_user'], 0, 'PM')) {
+                $own_groups = array_keys(users_get_groups($config['id_user'], 'LM'));
+            } else {
+                $own_groups = array_keys(users_get_groups($config['id_user'], 'LM', false));
+            }
+
+            $is_in_group = in_array($al_template['id_group'], $own_groups);
+            // Then template group have to be is his own groups.
+            if ($is_in_group) {
+                    ui_print_page_header(
+                        __('Alerts').' &raquo; '.__('Alert templates'),
+                        'images/gm_alerts.png',
+                        false,
+                        'alerts_config',
+                        true
+                    );
+            } else {
+                db_pandora_audit(
+                    AUDIT_LOG_ACL_VIOLATION,
+                    'Trying to access Alert Management'
+                );
+                include 'general/noaccess.php';
+                exit;
+            }
+        }
+    } else {
+            ui_print_page_header(
+                __('Alerts').' &raquo; '.__('Alert templates'),
+                'images/gm_alerts.png',
+                false,
+                'alerts_config',
+                true
+            );
+    }
+
+    $result = alerts_delete_alert_template($id);
+
+    if ($result) {
+        db_pandora_audit(
+            AUDIT_LOG_ALERT_MANAGEMENT,
+            'Delete alert template #'.$id
+        );
+    } else {
+        db_pandora_audit(
+            AUDIT_LOG_ALERT_MANAGEMENT,
+            'Fail try to delete alert template #'.$id
+        );
+    }
+
+    ui_print_result_message(
+        $result,
+        __('Successfully deleted'),
+        __('Could not be deleted')
+    );
+}
+
+$search_string = (string) get_parameter('search_string');
+$search_type = (string) get_parameter('search_type');
+$url = ui_get_url_refresh(
+    [
+        'offset'        => false,
+        'search_string' => $search_string,
+        'search_type'   => $search_type,
+        'alert_flag'    => true,
+    ],
+    true,
+    false
+);
+
+$table = new stdClass();
+$table->width = '100%';
+$table->class = 'databox filters filter-table-adv';
+
+
+$table->data = [];
+$table->head = [];
+$table->style = [];
+
+$table->style[0] = 'width: 50%;';
+$table->style[1] = 'width: 50%;';
+
+$table->data[0][0] = html_print_label_input_block(
+    __('Type'),
+    html_print_select(
+        alerts_get_alert_templates_types(),
+        'search_type',
+        $search_type,
+        '',
+        __('All'),
+        '',
+        true,
+        false,
+        false,
+        'w100p',
+        false,
+        'width: 100%;'
+    )
+);
+
+$table->data[0][1] = html_print_label_input_block(
+    __('Search'),
+    html_print_input_text(
+        'search_string',
+        $search_string,
+        '',
+        25,
+        255,
+        true,
+        false,
+        false,
+        '',
+        'w100p'
+    )
+);
+
+$table->data[1][0] = '&nbsp;';
+$table->data[1][1] = html_print_submit_button(
+    __('Search'),
+    '',
+    false,
+    [
+        'class' => 'float-right',
+        'icon'  => 'search',
+    ],
+    true
+);
+
+$filter = '<form class="" method="post" action="'.$url.'">';
+$filter .= html_print_table($table, true);
+$filter .= '</form>';
+ui_toggle(
+    $filter,
+    '<span class="subsection_header_title">'.__('Show Options').'</span>',
+    __('Show Options'),
+    'update',
+    true,
+    false,
+    '',
+    'white-box-content no_border',
+    'filter-datatable-main box-flat white_table_graph fixed_filter_bar  '
+);
+
+
+unset($table);
+
+$filter = [];
+if ($search_type != '') {
+    $filter['type'] = $search_type;
+}
+
+if ($search_string) {
+    $filter[] = "(name LIKE '%".$search_string."%' OR description LIKE '%".$search_string."%' OR value LIKE '%".$search_string."%')";
+}
+
+$offset = (int) get_parameter('offset');
+$filter['offset'] = $offset;
+$filter['limit'] = (int) $config['block_size'];
+if (!is_user_admin($config['id_user'])) {
+    $filter['id_group'] = array_keys(users_get_groups(false, 'LM'));
+}
+
+$total_templates = alerts_get_alert_templates($filter, ['COUNT(*) AS total'], true);
+$total_templates = $total_templates[0]['total'];
+
+$templates = alerts_get_alert_templates(
+    $filter,
+    [
+        'id',
+        'name',
+        'description',
+        'type',
+        'id_group',
+        'previous_name',
+    ]
+);
+if ($templates === false) {
+    $templates = [];
+}
+
+$table = new stdClass();
+$table->width = '100%';
+$table->class = 'info_table';
+$table->data = [];
+$table->head = [];
+$table->head[0] = __('Name');
+$table->head[1] = __('Group');
+// $table->head[2] = __('Description');
+$table->head[3] = __('Type');
+$table->head[4] = __('Op.');
+$table->style = [];
+$table->style[0] = 'font-weight: bold';
+$table->size = [];
+$table->size[4] = '85px';
+$table->align = [];
+$table->align[1] = 'left';
+$table->align[4] = 'left';
+
+$rowPair = true;
+$iterator = 0;
+foreach ($templates as $template) {
+    if ($rowPair) {
+        $table->rowclass[$iterator] = 'rowPair';
+    } else {
+        $table->rowclass[$iterator] = 'rowOdd';
+    }
+
+    $rowPair = !$rowPair;
+    $iterator++;
+
+    $data = [];
+
+    $data[0] = '<a href="index.php?sec='.$sec.'&sec2=godmode/alerts/configure_alert_template&id='.$template['id'].'&pure='.$pure.'">'.$template['name'].'</a>';
+    if (!check_acl_restricted_all($config['id_user'], $template['id_group'], 'LM')) {
+        $data[0] .= ui_print_help_tip(__('You cannot edit this alert template, You don\'t have the permission to edit All group.'), true);
+    }
+
+    $data[1] = ui_print_group_icon($template['id_group'], true);
+    $data[3] = alerts_get_alert_templates_type_name($template['type']);
+
+    if (check_acl($config['id_user'], $template['id_group'], 'LM')) {
+        $table->cellclass[][4] = 'table_action_buttons';
+        $data[4] = '<form method="post" action="index.php?sec='.$sec.'&sec2=godmode/alerts/configure_alert_template&pure='.$pure.'&offset='.$offset.'" class="float-left inline_line">';
+        $data[4] .= html_print_input_hidden('duplicate_template', 1, true);
+        $data[4] .= html_print_input_hidden('source_id', $template['id'], true);
+        $data[4] .= html_print_input_image(
+            'dup',
+            'images/copy.svg',
+            1,
+            '',
+            true,
+            [
+                'title' => __('Duplicate'),
+                'class' => 'main_menu_icon',
+            ]
+        );
+        $data[4] .= '</form> ';
+
+        if (check_acl_restricted_all($config['id_user'], $template['id_group'], 'LM')) {
+            $data[4] .= '<form method="post" class="float-right inline_line" onsubmit="if (!confirm(\''.__('Are you sure?').'\')) return false;">';
+            $data[4] .= html_print_input_hidden('delete_template', 1, true);
+            $data[4] .= html_print_input_hidden('id', $template['id'], true);
+            $data[4] .= html_print_input_image(
+                'del',
+                'images/delete.svg',
+                1,
+                '',
+                true,
+                [
+                    'title' => __('Delete'),
+                    'class' => 'main_menu_icon',
+                ]
+            );
+            $data[4] .= '</form> ';
+        }
+    } else {
+        $data[4] = '';
+    }
+
+    array_push($table->data, $data);
+}
+
+$pagination = '';
+if (isset($data) === true) {
+    $show_count = false;
+    
+
+    html_print_table($table);
+    $pagination = ui_pagination(
+        $total_templates,
+        $url,
+        0,
+        0,
+        true,
+        'offset',
+        $show_count,
+        ''
+    );
+} else {
+    ui_print_info_message(
+        [
+            'no_close' => true,
+            'message'  => __('No alert templates defined'),
+        ]
+    );
+}
+
+$buttons = '';
+
+echo '<div class="action-buttons" style="width: '.$table->width.'">';
+echo '<form method="post" action="index.php?sec='.$sec.'&sec2=godmode/alerts/configure_alert_template&pure='.$pure.'">';
+$buttons = html_print_submit_button(__('Create'), 'create', false, ['icon' => 'wand'], true);
+$buttons .= html_print_input_hidden('create_alert', 1);
+html_print_action_buttons($buttons, ['right_content' => $pagination]);
+echo '</form>';
+echo '</div>';

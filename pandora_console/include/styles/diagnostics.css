@@ -1,0 +1,91 @@
+.pdf-report {
+  page-break-inside: avoid;
+}
+
+.pdf-report th,
+.title-self-monitoring,
+.caption_table caption {
+  text-align: center;
+  font-size: 1.5em;
+  font-weight: bolder;
+  color: var(--text-color);
+  background: var(--secondary-color);
+  padding: 8px;
+}
+
+.pdf-report tr {
+  text-align: justify;
+}
+
+.dataTables_wrapper {
+  min-height: 150px;
+  margin-bottom: 20px;
+}
+
+.datatables-td-title {
+  width: 25% !important;
+  font-weight: bolder;
+}
+
+.datatables-td-max {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.datatables-td-max img {
+  margin-right: 10px;
+}
+
+.datatables-td-max span {
+  width: 400px;
+  display: inline-block;
+  word-wrap: break-word;
+}
+
+.pdf-report td {
+  font-size: 1.2em;
+}
+
+.title-self-monitoring {
+  border-top: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.container-self-monitoring {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  background-color: var(--secondary-color);
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  padding-bottom: 15px;
+}
+
+.element-self-monitoring {
+  flex: 2 1 600px;
+}
+
+.element-self-monitoring > img[data-title="No data"] {
+  margin-top: 5%;
+  margin-left: 20%;
+}
+
+.footer-self-monitoring {
+  margin: 30px;
+  font-style: italic;
+}
+
+#modal_form_feedback {
+  margin: 10px;
+}
+
+#div-what-happened label {
+  margin-bottom: 10px;
+}

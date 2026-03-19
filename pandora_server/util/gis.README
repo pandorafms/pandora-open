@@ -1,0 +1,21 @@
+Pandora Open uses the MaxMind GeoIP API to map IP address to it's GPS coordinates. This is a GPL library included in Pandora Open libraries.
+
+In order to be able to use GeoIP/GIS features of the Pandora Open reconserver, you need to download and install a GeoLiteCite maps. You can download from maxmind site or from Pandora Open download site. For more information about MaxMind and GeoIP database, check this URLs:
+
+ http://www.maxmind.com/app/geoip_resources
+ http://www.maxmind.com/app/installation
+ http://www.maxmind.com/app/geolitecity
+ 
+This database will be used with Pandora Open recon server for positioning detected host Systems. Check Pandora Open documentacion for more information.
+
+Prior to use this database you need to decompress it with gzip -d and edit your /etc/pandora/pandora_server.conf file and point the GeoLiteCity GeoLiteCity.dat file with Pandora Open configuration token 'recon_reverse_geolocation_file', like:
+
+ activate_gis 1
+ recon_reverse_geolocation_file /usr/share/pandora_server/util/GeoLiteCity.dat
+ location_error 50
+ recon_location_scatter_radius 1000
+
+Get a new version at:
+
+ http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+

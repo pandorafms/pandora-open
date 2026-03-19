@@ -1,0 +1,57 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ([2.71])
+AC_INIT([Pandora Agent],[3.0],[rnovoa@artica.es])
+AC_CONFIG_SRCDIR([pandora_strutils.h])
+AC_CONFIG_HEADERS([config.h])
+
+AC_CANONICAL_TARGET
+AM_INIT_AUTOMAKE([foreign subdir-objects])
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
+
+# Get rid of the -g flag
+CXXFLAGS="-std=c++14 -DWIN32_LEAN_AND_MEAN"
+LDFLAGS="-static -static-libgcc -static-libstdc++"
+
+# Debugging
+AC_ARG_ENABLE([debug], [  --enable-debug          produce debugging information (disabled by default)], debug="yes", debug="no")
+AM_CONDITIONAL(DEBUG, test "$debug" = "yes")
+
+# Checks for programs.
+AC_CHECK_TOOL([WINDRES], [windres], [no])
+if test "$WINDRES" = "no"; then
+	AC_MSG_ERROR([windres not found. You can get it from http://www.mingw.org/])
+fi
+
+# Checks for libraries.
+AC_CHECK_LIB([ws2_32], [main], , AC_MSG_ERROR([MingGW not found. You can get it from http://www.mingw.org/]))
+AC_CHECK_LIB([winmm], [main], , AC_MSG_ERROR([libwinmm not found.]))
+AC_CHECK_LIB([psapi], [main], , AC_MSG_ERROR([libpsapi not found.]))
+AC_CHECK_LIB([ole32], [main], , AC_MSG_ERROR([libole32 not found.]))
+AC_CHECK_LIB([oleaut32], [main], , AC_MSG_ERROR([liboleaut not found.]))
+AC_CHECK_LIB([uuid], [main], , AC_MSG_ERROR([libuuid not found.]))
+AC_CHECK_LIB([gdi32], [main], , AC_MSG_ERROR([libgdi32 not found.]))
+
+# Checks for header files.
+AC_CHECK_HEADERS([fcntl.h stddef.h stdlib.h string.h sys/socket.h sys/time.h unistd.h wchar.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_CHECK_TYPES([ptrdiff_t])
+
+# Checks for library functions.
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_MALLOC
+AC_FUNC_MKTIME
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([floor gethostbyname gettimeofday inet_ntoa memchr memmove memset regcomp select socket strchr strdup strrchr strtol])
+
+AC_CONFIG_FILES([Makefile])
+
+AC_OUTPUT

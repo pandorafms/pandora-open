@@ -1,0 +1,59 @@
+#!/bin/sh
+
+# **********************************************************************
+# Pandora Open Server Daemon launcher through pandora_server for FreeBSD
+# (c) 2010-2021 Junichi Satoh <junichi@rworks.jp>
+# (c) 2014 Koichiro Kikuchi <koichiro@rworks.jp>
+#
+# **********************************************************************
+
+# PROVIDE: pandora_server
+# REQUIRE: LOGIN mysql
+# KEYWORD: shutdown
+
+# Add the following lines to /etc/rc.conf to enable pandora_server:
+# pandora_server_enable (bool):  Set to "YES" to enable pandora_server (default: NO)
+#
+
+. "/etc/rc.subr"
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
+
+name="pandora_server"
+rcvar=pandora_server_enable
+
+: ${pandora_server_enable:=NO}
+: ${pandora_server_configfile:=/usr/local/etc/pandora/pandora_server.conf}
+
+command=/usr/local/bin/pandora_server
+command_pandora=/usr/local/bin/pandora_server
+command_interpreter=/usr/local/bin/perl
+required_files="$pandora_server_configfile"
+
+stop_postcmd=stop_postcmd
+
+status_server_cmd=control_pandora_server
+start_server_cmd=control_pandora_server
+stop_server_cmd=control_pandora_server
+restart_server_cmd=control_pandora_server
+
+load_rc_config $name
+
+control_pandora_server() {
+	local name command
+	name="pandora_server"
+	command=$command_pandora
+	pandora_server_flags="-D $pandora_server_configfile"
+	pandora_arg=`echo $rc_arg | sed 's/_server//g'`
+	unset "${pandora_arg}_cmd" "${pandora_arg}_precmd" "${pandora_arg}_postcmd"
+	run_rc_command $pandora_arg
+}
+
+stop_postcmd()
+{
+        rm -f $pidfile
+}
+
+pandora_server_flags="-D $pandora_server_configfile"
+
+run_rc_command "$1"

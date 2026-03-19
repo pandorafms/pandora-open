@@ -1,0 +1,13 @@
+/var/log/pandora/pandora_agent.log {
+	weekly
+	missingok
+	size 300000
+	rotate 3
+	maxage 90
+	compress
+	notifempty
+	copytruncate
+	postrotate
+		/bin/systemctl restart pandora_agent_daemon
+	endscript
+}

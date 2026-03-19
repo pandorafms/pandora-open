@@ -1,0 +1,55 @@
+#!/usr/bin/perl
+################################################################################
+# pandora_exec - Execute a command with a time limit.
+#
+# Copyright (c) 2008-2023 Pandora Open
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+################################################################################
+use strict;
+use warnings;
+use POSIX qw(WEXITSTATUS WIFEXITED);
+
+# Check command line arguments. 
+if ($#ARGV < 1) {
+	print("Usage: $0 <timeout in seconds> <command>\n");
+	exit 1;	
+}
+
+my @opts = @ARGV;
+my $timeout = shift(@opts);
+my $command = ($0 =~ m/_agent_exec$/) ? # For backward compatibility with pandora_agent.
+              join(' ', @opts) :
+              join(' ', map { quotemeta($_) } @opts);
+
+# Fork:
+# * The child will run the command.
+# * The parent will timeout if needed
+#   and exit with the appropriate exit status.
+my $pid = fork();
+if ($pid == 0) {
+	setpgrp();
+	exec($command);
+} else {
+	eval {
+		local $SIG{ALRM} = sub { kill(9, -$pid); exit 1; };
+		alarm $timeout;
+		waitpid($pid, 0);
+		alarm 0;
+		if (WIFEXITED(${^CHILD_ERROR_NATIVE})) {
+			exit WEXITSTATUS(${^CHILD_ERROR_NATIVE});
+		}
+	};
+}
+
+exit 1;

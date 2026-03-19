@@ -1,0 +1,46 @@
+div#page {
+  width: auto;
+}
+li#select_multiple_modules_filtered {
+  width: 650px;
+  margin: 0 auto;
+}
+.networkconsole {
+  height: 100%;
+}
+.networkconsole svg {
+  height: 100%;
+}
+.minimap {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  border: 1px solid #bbbbbb;
+}
+.holding_networkmap {
+  display: none;
+  position: absolute;
+  right: 50px;
+  top: 20px;
+}
+.select-dashboard-width {
+  width: 110%;
+}
+#menu_tab li.nomn form#form-select-dashboard {
+  margin-top: 0px !important;
+}
+
+.table-border-0 {
+  border: none !important;
+  border-spacing: 0px !important;
+}
+
+.big_data {
+  text-decoration: none;
+  font-size: 2em;
+}
+
+.med_data {
+  text-decoration: none;
+  font-size: 1.5em;
+}

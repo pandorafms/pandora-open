@@ -1,0 +1,58 @@
+{
+  "name": "pandorafms/console",
+  "description": "Pandora OPEN ",
+  "authors": [
+    {
+      "name": "Pandora OPEN",
+      "email": "info@pandoraopen.io"
+    }
+  ],
+  "config": {
+    "platform": {
+      "php": "8.2"
+    }
+  },
+  "require": {
+    "swiftmailer/swiftmailer": "^6.0",
+    "amphp/parallel-functions": "^1.0",
+    "chrome-php/chrome": "^1.8.1",
+    "artica/phpchartjs": "^1.0",
+    "tinymce/tinymce": "^6.4",
+    "slim/slim": "4.*",
+    "slim/psr7": "^1.6",
+    "nyholm/psr7": "^1.8",
+    "nyholm/psr7-server": "^1.1",
+    "guzzlehttp/psr7": "^2",
+    "laminas/laminas-diactoros": "^3.2",
+    "php-di/php-di": "^7.0",
+    "zircote/swagger-php": "^4.8",
+    "doctrine/annotations": "^2.0",
+    "ramsey/uuid": "^4.7",
+    "lcobucci/jwt": "^5.2",
+    "lcobucci/clock": "^3.2"
+  },
+  "repositories": {
+    "phpchartjs": {
+      "type": "path",
+      "url": "../../../phpchartjs",
+      "options": {
+        "symlink": false
+      }
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "Models\\": "include/rest-api/models",
+      "PandoraFMS\\": "include/lib",
+      "UpdateManager\\": "update_manager_client/lib/UpdateManager"
+    },
+    "files": [
+      "include/global_config.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  }
+}

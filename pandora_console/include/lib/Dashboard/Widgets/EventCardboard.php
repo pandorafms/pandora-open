@@ -1,0 +1,589 @@
+<?php
+/**
+ * Pandora FMS OpenSource
+ * Copyright (c) 2004-2025 Pandora FMS Community
+ * https://pandorafms.org
+ *
+ * Este programa es software libre; puedes redistribuirlo y/o modificarlo bajo
+ * los términos de la Licencia Pública General de GNU publicada por la Free
+ * Software Foundation para la versión 2. Este programa se distribuye con la
+ * esperanza de que sea útil, pero SIN NINGUNA GARANTÍA; ni siquiera con la
+ * garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO
+ * PARTICULAR. Consulta la Licencia Pública General de GNU para más detalles.
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation for version 2. This program is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY; without any implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * Эта программа является свободным программным обеспечением; вы можете
+ * распространять и/или изменять её в соответствии с условиями Стандартной
+ * общественной лицензии GNU (GPL), опубликованной Фондом свободного
+ * программного обеспечения (Free Software Foundation) для версии 2. Эта
+ * программа распространяется в надежде, что она будет полезной, НО БЕЗ
+ * КАКИХ-ЛИБО ГАРАНТИЙ, даже без подразумеваемой гарантии КОММЕРЧЕСКОЙ
+ * ПРИГОДНОСТИ или ПРИГОДНОСТИ ДЛЯ КОНКРЕТНОЙ ЦЕЛИ. Подробнее см. Стандартную
+ * общественную лицензию GNU.
+ *
+ * Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou le
+ * modifier selon les termes de la Licence Publique Générale GNU, publiée par
+ * la Free Software Foundation pour la version 2. Ce programme est distribué
+ * dans l'espoir qu'il sera utile, mais SANS AUCUNE GARANTIE, même sans la
+ * garantie implicite de QUALITÉ MARCHANDE ou D'ADÉQUATION À UN USAGE
+ * PARTICULIER. Consultez la Licence Publique Générale GNU pour plus de détails.
+ *
+ * このプログラムはフリーソフトウェアです。GNU一般公衆利用許諾書
+ * （Free Software Foundationによって公開されたバージョン2）の条件の下で、
+ * 自由に再配布および改変することができます。本プログラムは有用であることを
+ * 願って配布されますが、いかなる保証もありません。商品性や特定目的への適合性の
+ * 保証も含まれません。詳しくはGNU一般公衆利用許諾書をご覧ください。
+ * ============================================================================
+ */
+
+namespace PandoraFMS\Dashboard;
+
+
+/**
+ * Event cardboard Widgets.
+ */
+class EventCardboard extends Widget
+{
+
+    /**
+     * Name widget.
+     *
+     * @var string
+     */
+    protected $name;
+
+    /**
+     * Title widget.
+     *
+     * @var string
+     */
+    protected $title;
+
+    /**
+     * Page widget;
+     *
+     * @var string
+     */
+    protected $page;
+
+    /**
+     * Class name widget.
+     *
+     * @var [type]
+     */
+    protected $className;
+
+    /**
+     * Values options for each widget.
+     *
+     * @var [type]
+     */
+    protected $values;
+
+    /**
+     * Configuration required.
+     *
+     * @var boolean
+     */
+    protected $configurationRequired;
+
+    /**
+     * Error load widget.
+     *
+     * @var boolean
+     */
+    protected $loadError;
+
+    /**
+     * Width.
+     *
+     * @var integer
+     */
+    protected $width;
+
+    /**
+     * Heigth.
+     *
+     * @var integer
+     */
+    protected $height;
+
+    /**
+     * Grid Width.
+     *
+     * @var integer
+     */
+    protected $gridWidth;
+
+    /**
+     * Cell ID.
+     *
+     * @var integer
+     */
+    protected $cellId;
+
+
+    /**
+     * Construct.
+     *
+     * @param integer      $cellId      Cell ID.
+     * @param integer      $dashboardId Dashboard ID.
+     * @param integer      $widgetId    Widget ID.
+     * @param integer|null $width       New width.
+     * @param integer|null $height      New height.
+     * @param integer|null $gridWidth   Grid width.
+     */
+    public function __construct(
+        int $cellId,
+        int $dashboardId=0,
+        int $widgetId=0,
+        ?int $width=0,
+        ?int $height=0,
+        ?int $gridWidth=0
+    ) {
+        global $config;
+
+        include_once $config['homedir'].'/include/functions_agents.php';
+        include_once $config['homedir'].'/include/functions_modules.php';
+        include_once $config['homedir'].'/include/functions_events.php';
+
+        // WARNING: Do not edit. This chunk must be in the constructor.
+        parent::__construct(
+            $cellId,
+            $dashboardId,
+            $widgetId
+        );
+
+        // Width.
+        $this->width = $width;
+
+        // Height.
+        $this->height = $height;
+
+        // Grid Width.
+        $this->gridWidth = $gridWidth;
+
+        // Cell Id.
+        $this->cellId = $cellId;
+
+        // Options.
+        $this->values = $this->decoders($this->getOptionsWidget());
+
+        // Positions.
+        $this->position = $this->getPositionWidget();
+
+        // Page.
+        $this->page = basename(__FILE__);
+
+        // ClassName.
+        $class = new \ReflectionClass($this);
+        $this->className = $class->getShortName();
+
+        // Title.
+        $this->title = __('Event cardboard');
+
+        // Name.
+        if (empty($this->name) === true) {
+            $this->name = 'EventCardboard';
+        }
+
+        // This forces at least a first configuration.
+        $this->configurationRequired = false;
+        if (isset($this->values['groupId']) === false) {
+            $this->configurationRequired = true;
+        }
+
+        $this->overflow_scrollbars = false;
+    }
+
+
+    /**
+     * Decoders hack for retrocompability.
+     *
+     * @param array $decoder Values.
+     *
+     * @return array Returns the values ​​with the correct key.
+     */
+    public function decoders(array $decoder): array
+    {
+        $values = [];
+        // Retrieve global - common inputs.
+        $values = parent::decoders($decoder);
+
+        if (isset($decoder['eventType']) === true) {
+            $values['eventType'] = $decoder['eventType'];
+        }
+
+        if (isset($decoder['maxHours']) === true) {
+            $values['maxHours'] = $decoder['maxHours'];
+        }
+
+        if (isset($decoder['eventStatus']) === true) {
+            $values['eventStatus'] = $decoder['eventStatus'];
+        }
+
+        if (isset($decoder['severity']) === true) {
+            $values['severity'] = $decoder['severity'];
+        }
+
+        if (isset($decoder['groupId']) === true) {
+            $values['groupId'] = $decoder['groupId'];
+        }
+
+        if (isset($decoder['nodes']) === true) {
+            $values['nodes'] = $decoder['nodes'];
+        }
+
+        return $values;
+    }
+
+
+    /**
+     * Generates inputs for form (specific).
+     *
+     * @return array Of inputs.
+     *
+     * @throws Exception On error.
+     */
+    public function getFormInputs(): array
+    {
+        $values = $this->values;
+
+        // Retrieve global - common inputs.
+        $inputs = parent::getFormInputs();
+
+        // Remove background field, this widget doesn't use it.
+        foreach ($inputs as $kIn => $vIn) {
+            if ($vIn['label'] === 'Background') {
+                unset($inputs[$kIn]);
+            }
+        }
+
+        $blocks = [
+            'row1',
+            'row2',
+        ];
+
+        $inputs['blocks'] = $blocks;
+
+        foreach ($inputs as $kInput => $vInput) {
+            $inputs['inputs']['row1'][] = $vInput;
+        }
+
+        // Event Type.
+        $fields = get_event_types();
+        $fields['not_normal'] = __('Not normal');
+
+        $inputs['inputs']['row1'][] = [
+            'label'     => __('Event type'),
+            'arguments' => [
+                'type'          => 'select',
+                'fields'        => $fields,
+                'class'         => 'event-widget-input',
+                'name'          => 'eventType',
+                'selected'      => $values['eventType'],
+                'return'        => true,
+                'nothing'       => __('Any'),
+                'nothing_value' => 0,
+            ],
+        ];
+
+        // Max. hours old. Default 8.
+        if (isset($values['maxHours']) === false) {
+            $values['maxHours'] = 8;
+        }
+
+        $inputs['inputs']['row1'][] = [
+            'label'     => __('Max. hours old'),
+            'arguments' => [
+                'name'   => 'maxHours',
+                'type'   => 'number',
+                'class'  => 'event-widget-input',
+                'value'  => $values['maxHours'],
+                'return' => true,
+                'min'    => 0,
+            ],
+        ];
+
+        // Event status.
+        $fields = events_get_all_status(true);
+
+        $inputs['inputs']['row1'][] = [
+            'label'     => __('Event status'),
+            'arguments' => [
+                'type'     => 'select',
+                'fields'   => $fields,
+                'class'    => 'event-widget-input',
+                'name'     => 'eventStatus',
+                'selected' => $values['eventStatus'],
+                'return'   => true,
+            ],
+        ];
+
+        // Groups.
+        $return_all_group = false;
+        $selected_groups_array = explode(',', $values['groupId'][0]);
+
+        if (empty($values['groupId'][0]) === true) {
+            $selected_groups_array = [0];
+        }
+
+        if ((bool) \users_can_manage_group_all('RM') === true
+            || ($selected_groups_array[0] !== ''
+            && in_array(0, $selected_groups_array) === true)
+        ) {
+            // Return all group if user has permissions or it is a currently
+            // selected group.
+            $return_all_group = true;
+        }
+
+        $help_tip = ui_print_help_tip(
+            __('Only the first group selected will be used on the redirect to events view.'),
+            true
+        );
+
+        $inputs['inputs']['row1'][] = [
+            'label'     => __('Groups').$help_tip,
+            'arguments' => [
+                'type'           => 'select_groups',
+                'name'           => 'groupId[]',
+                'class'          => 'event-widget-input',
+                'returnAllGroup' => true,
+                'privilege'      => 'AR',
+                'selected'       => $selected_groups_array,
+                'return'         => true,
+                'multiple'       => true,
+                'returnAllGroup' => $return_all_group,
+                'required'       => true,
+            ],
+        ];
+
+        // Nodes.
+        
+
+        // Severity.
+        $fields = get_priorities();
+
+        $severity_selected = explode(',', $values['severity']);
+
+        if (isset($values['severity']) === false) {
+            $severity_selected = array_keys($fields);
+        }
+
+        $inputs['inputs']['row2'][] = [
+            'label'     => __('Severity'),
+            'arguments' => [
+                'type'     => 'select',
+                'fields'   => $fields,
+                'class'    => 'event-widget-input',
+                'name'     => 'severity',
+                'selected' => $severity_selected,
+                'return'   => true,
+                'multiple' => true,
+            ],
+        ];
+
+        return $inputs;
+    }
+
+
+    /**
+     * Get Post for widget.
+     *
+     * @return array
+     */
+    public function getPost():array
+    {
+        // Retrieve global - common inputs.
+        $values = parent::getPost();
+
+        $values['eventType'] = \get_parameter('eventType', 0);
+        $values['maxHours'] = \get_parameter('maxHours', 8);
+        $values['eventStatus'] = \get_parameter('eventStatus', -1);
+        $values['groupId'] = \get_parameter('groupId', []);
+        $values['severity'] = \get_parameter('severity', -1);
+        $values['nodes'] = \get_parameter('nodes', 0);
+
+        return $values;
+    }
+
+
+    /**
+     * Draw widget.
+     *
+     * @return string;
+     */
+    public function load()
+    {
+        $output = '';
+
+        ui_require_css_file('events', 'include/styles/', true);
+        ui_require_javascript_file('pandora_events', 'include/javascript/', true);
+
+        $eventType = $this->values['eventType'];
+        $groupId = implode(',', $this->values['groupId']);
+        $utimestamp = strtotime('-'.$this->values['maxHours'].' hours');
+        $eventStatus = $this->values['eventStatus'];
+        $severity = $this->values['severity'];
+
+        $priorities = explode(',', $severity);
+        // Sort criticity array.
+        asort($priorities);
+
+        $count_meta = [];
+        $count_meta_tmp = [];
+
+            $events_rows = get_count_event_criticity(
+                $utimestamp,
+                $eventType,
+                $groupId,
+                $eventStatus,
+                $severity
+            );
+        
+
+        $output .= '<form style="display: none" action="'.ui_get_full_url('index.php?sec=eventos&sec2=operation/events/events').'" method="POST" id="event_redirect">';
+            $output .= html_print_input_hidden('filter[event_type]', $this->values['eventType'], true, false, false, 'filter[event_type]');
+            $output .= html_print_input_hidden('filter[event_view_hr]', $this->values['maxHours'], true, false, false, 'filter[event_view_hr]');
+            $output .= html_print_input_hidden('filter[status]', $this->values['eventStatus'], true, false, false, 'filter[status]');
+            $output .= html_print_input_hidden('filter[id_group_filter]', $this->values['groupId'][0], true, false, false, 'filter[id_group_filter]');
+            $output .= html_print_input_hidden('filter[severity]', '', true, false, false, 'filter[severity]');
+            $output .= html_print_input_hidden('get_events', '1', true, false, false, 'get_events');
+            $output .= html_print_input_hidden('filter[tag_with]', 'WyIwIl0=', true, false, false, 'filter[tag_with]');
+            $output .= html_print_input_hidden('filter[tag_without]', 'WyIwIl0=', true, false, false, 'filter[tag_without]');
+        $output .= '</form>';
+        $output .= '<table class="w100p h100p table-border-0 event-cardboard-widget"><tbody><tr>';
+
+        $width_td = (100 / count(explode(',', $severity)));
+
+        $td_count = 0;
+        foreach ($priorities as $key) {
+            $count = 0;
+            foreach ($events_rows as $event) {
+                if ((int) $key === (int) $event['criticity']) {
+                    $count = $event['count'];
+                }
+            }
+
+            $severity_row = (int) $key;
+            switch ($severity_row) {
+                case 0:
+                    $text = __('Maintenance');
+                    $color = get_priority_class((int) $key);
+                break;
+
+                case 1:
+                    $text = __('Informational');
+                    $color = get_priority_class((int) $key);
+                break;
+
+                case 2:
+                    $text = __('Normal');
+                    $color = get_priority_class((int) $key);
+                break;
+
+                case 3:
+                    $text = __('Warning');
+                    $color = get_priority_class((int) $key);
+                break;
+
+                case 4:
+                    $text = __('Critical');
+                    $color = get_priority_class((int) $key);
+                break;
+
+                case 5:
+                    $text = __('Minor');
+                    $color = get_priority_class((int) $key);
+                break;
+
+                case 6:
+                    $text = __('Major');
+                    $color = get_priority_class((int) $key);
+                break;
+
+                case 20:
+                    $text = __('Not normal');
+                    $color = get_priority_class((int) $key);
+                break;
+
+                case 21:
+                    $text = __('Critical').'/'.__('Normal');
+                    $color = get_priority_class((int) $key);
+                break;
+
+                case 34:
+                    $text = __('Warning').'/'.__('Critical');
+                    $color = get_priority_class((int) $key);
+                break;
+
+                default:
+                return false;
+            }
+
+            $border = '';
+            $td_count++;
+            if (count($priorities) > $td_count) {
+                $border = ' border-right: 1px solid white; border-collapse: collapse;';
+            }
+
+            $output .= '<td class="'.$color.'" style="width: '.$width_td.'%;'.$border.'" onclick="openEvents('.$severity_row.')"><span class="med_data">';
+            $output .= $count;
+            $output .= '</span><br>';
+            $output .= $text;
+            $output .= '</td>';
+        }
+
+        $output .= '</tr></tbody></table>';
+
+        return $output;
+    }
+
+
+    /**
+     * Get description.
+     *
+     * @return string.
+     */
+    public static function getDescription()
+    {
+        return __('Event cardboard');
+    }
+
+
+    /**
+     * Get Name.
+     *
+     * @return string.
+     */
+    public static function getName()
+    {
+        return 'EventCardboard';
+    }
+
+
+    /**
+     * Get size Modal Configuration.
+     *
+     * @return array
+     */
+    public function getSizeModalConfiguration(): array
+    {
+
+            $size = [
+                'width'  => 900,
+                'height' => 450,
+            ];
+        
+
+        return $size;
+    }
+
+
+}
