@@ -45,7 +45,7 @@ Using docker
 <pre bash>
 mkdir $HOME/pandora; cd $HOME/pandora
 curl -fSsL -O https://raw.githubusercontent.com/pandorafms/pandora-open/main/extra/docker/docker-compose.yml
-docker-compose -f docker-compose.yml up
+docker compose -f docker-compose.yml up
 </pre>
 
 By default it uses 8081/tcp port for Pandora Console
