@@ -22,6 +22,12 @@ jobs:
           
           # Force LXD driver since GitHub Runners don't support nested KVM
           sudo multipass set local.driver=lxd
+
+          # Fix networking
+          sudo sysctl -w net.ipv4.ip_forward=1
+          sudo iptables -P FORWARD ACCEPT
+          sudo iptables -A FORWARD -o lxdbr0 -j ACCEPT
+          sudo iptables -A FORWARD -i lxdbr0 -j ACCEPT
           
           # Wait for the daemon to settle
           sleep 20

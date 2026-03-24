@@ -12,13 +12,13 @@ jobs:
         include:
           - component: "Server"
             target: "test_server"
-            pkg: "perl libperl-dev make libwww-perl libdbi-perl libdbd-mysql-perl libjson-perl libxml-simple-perl libxml-twig-perl libxml-parser-perl libhtml-tree-perl libnetaddr-ip-perl libio-socket-inet6-perl"
+            pkg: "perl libperl-dev make libperl-critic-perl libwww-perl libdbi-perl libdbd-mysql-perl libjson-perl libxml-simple-perl libxml-twig-perl libxml-parser-perl libhtml-tree-perl libnetaddr-ip-perl libio-socket-inet6-perl"
           - component: "Linux Agent"
             target: "test_agent_linux"
             pkg: "libperl-critic-perl"
           - component: "Windows Agent"
             target: "test_agent_win32"
-            pkg: "autoconf automake binutils-mingw-w64 gcc-mingw-w64-x86-64 nsis"
+            pkg: "autoconf automake binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-x86-64-dev nsis"
 
     env:
       REPO_PATH: ${{ github.workspace }}
@@ -46,7 +46,9 @@ jobs:
       - name: Run ${{ matrix.component }} Tests
         run: |
           if [ "${{ matrix.component }}" == "Windows Agent" ]; then
+            export ARCH="x86_64"
             export HOST="x86_64-w64-mingw32"
             export CC="$HOST-gcc"
+            export CXX="$HOST-g++"
           fi
           make ${{ matrix.target }}
