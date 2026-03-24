@@ -3580,9 +3580,6 @@ sub kill_signal_handler {
         log_message( 'udp server', 'terminated.' );
     }
 
-    # Kill any running RMM agent.
-    system("pandora_rmm_agent -k");
-
     exit(0);
 }
 
@@ -4085,11 +4082,6 @@ while (1) {
 
     # Check for a new configuration
     check_remote_config() unless ( $Conf{'debug'} eq '1' );
-
-    # Start the RMM agent if needed.
-    if ( defined( $Conf{'rmm_enabled'} ) && $Conf{'rmm_enabled'} eq '1' ) {
-        system("pandora_rmm_agent -c '$ConfDir/$ConfFile' &");
-    }
 
     # Check file collections
     check_collections() unless ( $Conf{'debug'} eq '1' );

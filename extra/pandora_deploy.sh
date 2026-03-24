@@ -1629,12 +1629,10 @@ chmod 0644 /etc/logrotate.d/pandora_server
 chmod 0644 /etc/logrotate.d/pandora_agent
 
 # Enable Pandora service
-execute_cmd "/etc/init.d/pandora_server start" "Starting Pandora Open Server"
-systemctl enable pandora_server &>> "$LOGFILE"
+execute_cmd "service pandora_server start" "Starting Pandora Open Server"
 
 # Start Tentacle server
 execute_cmd "service tentacle_serverd start" "Starting Tentacle Server"
-systemctl enable tentacle_serverd &>> "$LOGFILE"
 
 # Enable Console cron
 execute_cmd "echo \"* * * * * root wget -q -O - --no-check-certificate --load-cookies /tmp/cron-session-cookies --save-cookies /tmp/cron-session-cookies --keep-session-cookies http://127.0.0.1/pandora_console/cron.php >> $PANDORA_CONSOLE/log/cron.log\" >> /etc/crontab" "Enabling Pandora Open Console cron"
@@ -1646,16 +1644,10 @@ echo "@hourly         root    bash -c /etc/cron.hourly/pandora_db" >> /etc/cront
 # Configure the Agent
 if [ -n "$AGENT_CONF_PATH" ] && [ -f "$AGENT_CONF_PATH" ]; then
     sed -i "s/^remote_config.*$/remote_config 1/g" "$AGENT_CONF_PATH" &>> "$LOGFILE"
+	execute_cmd "service pandora_agent_daemon start" "Starting Pandora Open Agent"
 else
     echo "Pandora agent config not found; skipping remote_config enable" &>> "$LOGFILE"
 fi
-if [ -x /etc/init.d/pandora_agent_daemon ]; then
-    execute_cmd "/etc/init.d/pandora_agent_daemon restart" "Starting Pandora Open Agent"
-    systemctl enable pandora_agent_daemon &>> "$LOGFILE"
-else
-    echo "Pandora agent init script not found; skipping agent start" &>> "$LOGFILE"
-fi
-
 
 # Fix PhantomJS path
 sed --follow-symlinks -i -e "s/^openssl_conf = openssl_init/#openssl_conf = openssl_init/g" /etc/ssl/openssl.cnf &>> "$LOGFILE"

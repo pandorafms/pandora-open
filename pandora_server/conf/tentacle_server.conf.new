@@ -15,7 +15,7 @@ port 41121
 # max_connections 10
 
 # [-d] Run as daemon. 1 true, 0 false
-daemon 1
+daemon 0
 
 # [-I] Enable insecure mode. 1 true, 0 false.
 #insecure 0

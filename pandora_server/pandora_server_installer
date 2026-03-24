@@ -131,6 +131,13 @@ set_global_vars () {
 #
 install_startup_script () {
 	[ "$INITDIR" ] || return 1
+	if [ "$LINUX" = "YES" ]
+	then
+		# Do not install init.d script if systemd is available
+		if [ -x "$(command -v systemctl)" ]; then
+			return 0
+		fi
+	fi
 	if [ "$1" = "-s" ]
 	then
 		SPRIO=$2
@@ -148,7 +155,6 @@ install_startup_script () {
 		echo "Linking startup script to /etc/rc2.d"
 		update-rc.d $SCRIPT_NAME defaults
 		ln -s $DESTDIR$INITDIR/$SCRIPT_NAME /etc/init.d/$SCRIPT_NAME
-		systemctl daemon-reload 2> /dev/null
 		;;
 	SUSE)
 		echo "Creating startup daemons"
@@ -160,13 +166,11 @@ install_startup_script () {
 	*)
 		if [ "$LINUX" = YES ]
 		then
-			# Pandora Open Server install (Other Distros)
+			# Pandora FMS Server install (Other Distros)
 			INITLV=`grep '[0-9]:initdefault' /etc/inittab | cut -f 2 -d ':'`
 			: ${INITLV:=2}
 			echo "Linking startup script to /etc/rc.d/rc$INITLV.d/S$SPRIO$SCRIPT_NAME"
 			ln -s $DESTDIR$INITDIR/$SCRIPT_NAME /etc/rc.d/rc$INITLV.d/S$SPRIO$SCRIPT_NAME
-			ln -s $DESTDIR$INITDIR/$SCRIPT_NAME /etc/init.d/$SCRIPT_NAME
-			systemctl daemon-reload 2> /dev/null
 		fi
 		;;
 	esac
@@ -427,7 +431,6 @@ install () {
 	if [ $WITHOUT_TENTACLE -eq 0 ]
 	then
 		# tentacle_server is already installed by "make install"
-		install_startup_script -s 80 $TENTACLE_INIT_SCRIPT
 
 		# Create the directory to locate the Tentacle configuration file
 		echo "Creating setup Tentacle directory in $TENTACLE_CFG_DIR"
@@ -496,21 +499,40 @@ install () {
 		echo ">Installing pandora_server service to $INSTALL_DIR..."
 		[ -d "$PID_DIR" ] || mkdir -p "$PID_DIR"
 		[ -d "$SYSTEMD_DIR" ] || mkdir -p "$SYSTEMD_DIR"
-		cat > $SYSTEMD_DIR/pandora_open.service <<-EOF
+		cat > $SYSTEMD_DIR/pandora_server.service <<-EOF
 [Unit]
 Description=Pandora Open Server
 After=network.target
 
 [Service]
-Type=forking
-ExecStart=/etc/init.d/pandora_server start
-ExecStop=/etc/init.d/pandora_server stop
-ExecReload=/etc/init.d/pandora_server restart
-RemainAfterExit=yes
+Type=simple
+User=root
+ExecStart=$PREFIX/bin/pandora_server $PANDORA_CFG_FILE
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
 EOF
+		systemctl enable pandora_server.service 2> /dev/null
+
+		if [ $WITHOUT_TENTACLE -eq 0 ]; then
+			echo ">Installing tentacle_serverd service..."
+			cat > $SYSTEMD_DIR/tentacle_serverd.service <<-EOF
+[Unit]
+Description=Tentacle Server
+After=network.target
+
+[Service]
+Type=simple
+User=pandora
+ExecStart=$PREFIX/bin/tentacle_server -F $TENTACLE_CFG_FILE
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+			systemctl enable tentacle_serverd.service 2> /dev/null
+		fi
 		;;
 	esac
 
@@ -544,7 +566,6 @@ EOF
 	echo
 	echo "Now you have to edit your $PANDORA_CFG_FILE file to change the database password (default is pandora) with the one set in include/config.php of your Pandora Open Console."
 	echo "After setting password you can start your Pandora Open Server!!"
-
 	if [ "$DISTRO" = "FreeBSD" ] || [ "$DISTRO" = "NetBSD" ]
 	then
 		echo " "
@@ -553,11 +574,14 @@ EOF
 			echo "Define '$TENTACLE_RC_VAR=\"YES\"' in /etc/rc.conf to enable tentacle server daemon."
     fi
 
-    systemctl daemon-reload 2> /dev/null
+    if [ -x "$(command -v systemctl)" ]; then
+        systemctl daemon-reload 2> /dev/null
+    fi
 }
 
 uninstall () {
 	set_global_vars
+	SYSTEMD_DIR=/etc/systemd/system
 
 	if [ "$LINUX" != "YES" ] && [ "$DISTRO" != "FreeBSD" ] && [ "$DISTRO" != "NetBSD" ]
 	then
@@ -611,6 +635,17 @@ uninstall () {
 	[ -e $DESTDIR$PREFIX/bin/pandora_agent ] || rm -f  $DESTDIR$PREFIX/bin/tentacle_server 2> /dev/null
 	[ -e $DESTDIR$PREFIX/bin/pandora_agent ] || rm -f  $DESTDIR$PREFIX/bin/tentacle_client 2> /dev/null
 	rm -Rf $DESTDIR$PANDORA_HOME
+
+	# Disable and remove systemd service files
+	if [ -d "$SYSTEMD_DIR" ]
+	then
+		systemctl disable pandora_server.service 2> /dev/null
+		rm -f $SYSTEMD_DIR/pandora_server.service 2> /dev/null
+		systemctl disable tentacle_serverd.service 2> /dev/null
+		rm -f $SYSTEMD_DIR/tentacle_serverd.service 2> /dev/null
+		systemctl daemon-reload 2> /dev/null
+	fi
+
 	rm -f  $DESTDIR/etc/cron.hourly/pandora_db
 	rm -f  $DESTDIR/etc/logrotate.d/pandora_server
 	if [ "$DESTDIR" ]
