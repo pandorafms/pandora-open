@@ -31,7 +31,7 @@ jobs:
       - name: Cache APT packages
         uses: actions/cache@v4
         with:
-          path: ~/apt-cache
+          path: ~/apt-cache/archives
           key: ${{ runner.os }}-apt-${{ matrix.component }}-${{ hashFiles('**/Makefile*') }}
           restore-keys: |
             ${{ runner.os }}-apt-${{ matrix.component }}-
@@ -39,9 +39,9 @@ jobs:
       - name: Install Dependencies
         if: matrix.pkg != ''
         run: |
-          mkdir -p ~/apt-cache/partial
+          mkdir -p $HOME/apt-cache/archives/partial
           sudo apt-get update
-          sudo apt-get -o dir::cache::archives="~/apt-cache" install -y ${{ matrix.pkg }}
+          sudo apt-get -o dir::cache::archives="$HOME/apt-cache/archives" install -y ${{ matrix.pkg }}
 
       - name: Run ${{ matrix.component }} Tests
         run: |

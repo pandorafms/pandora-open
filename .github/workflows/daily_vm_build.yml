@@ -19,30 +19,40 @@ jobs:
           # Switching to the LXD driver allows Multipass to run in a container-like mode
           sudo snap install lxd
           sudo lxd init --auto
+          
+          # Force LXD driver since GitHub Runners don't support nested KVM
           sudo multipass set local.driver=lxd
-          sudo usermod -aG multipass $USER
+          
           # Wait for the daemon to settle
-          sleep 10
+          sleep 20
 
       - name: Build VM (Non-Interactive)
         run: |
           VM_NAME="pandora-ci-$(date +%s)"
           echo "Building VM: $VM_NAME"
-          sg multipass -c "echo 'y' | make vm VM_NAME=$VM_NAME"
+          # Use sudo -E to preserve environment variables like REPO_PATH
+          echo 'y' | sudo -E make vm VM_NAME=$VM_NAME
         env:
           REPO_PATH: ${{ github.workspace }}
 
       - name: Verify Installation
         run: |
-          sg multipass -c "multipass list"
+          sudo multipass list
+          
           # Get the name of the VM we just created
-          VM_ID=$(sg multipass -c "multipass list --format csv" | grep Running | cut -d, -f1 | head -n 1)
-          if [ -z "$VM_ID" ]; then echo "No running VM found"; exit 1; fi
-          sg multipass -c "multipass exec $VM_ID -- curl -s -I http://localhost/pandora_console" | grep "200 OK"
+          VM_ID=$(sudo multipass list --format csv | grep Running | cut -d, -f1 | head -n 1)
+          
+          if [ -z "$VM_ID" ]; then 
+            echo "No running VM found"
+            exit 1
+          fi
+          
+          # Check if the console is serving the 200 OK
+          sudo multipass exec $VM_ID -- curl -s -I http://localhost/pandora_console | grep "200 OK"
 
       - name: Cleanup VM
         if: always() # This runs even if the build fails
         run: |
-          sg multipass -c "multipass stop --all"
-          sg multipass -c "multipass delete --all"
-          sg multipass -c "multipass purge"
+          sudo multipass stop --all || true
+          sudo multipass delete --all || true
+          sudo multipass purge || true
