@@ -1,0 +1,48 @@
+name: Daily VM Build
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # 3:00 AM UTC
+  workflow_dispatch: # Allows manual testing
+
+jobs:
+  build-vm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install Multipass & LXD
+        run: |
+          sudo snap install multipass
+          # Standard GitHub runners don't support KVM
+          # Switching to the LXD driver allows Multipass to run in a container-like mode
+          sudo snap install lxd
+          sudo lxd init --auto
+          sudo multipass set local.driver=lxd
+          # Wait for the daemon to settle
+          sleep 10
+
+      - name: Build VM (Non-Interactive)
+        run: |
+          # We bypass the 'read' prompt in vm_clean by piping 'y' into the command
+          echo "y" | make vm VM_NAME="pandora-ci-$(date +%s)"
+        env:
+          REPO_PATH: ${{ github.workspace }}
+
+      - name: Verify Installation
+        run: |
+          # Get the name of the VM we just created
+          VM_ID=$(multipass list --format csv | grep Running | cut -d, -f1 | head -n 1)
+          echo "Verifying VM: $VM_ID"
+          
+          # Run curl INSIDE the VM to see if Apache is serving the console
+          multipass exec $VM_ID -- curl -s -I http://localhost/pandora_console | grep "200 OK"
+
+      - name: Cleanup VM
+        if: always() # This runs even if the build fails
+        run: |
+          # Use a wildcard or the stored name to purge the VM
+          multipass stop --all
+          multipass delete --all
+          multipass purge

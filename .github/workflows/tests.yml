@@ -1,0 +1,45 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test-suite:
+    name: Test ${{ matrix.component }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - component: "Server"
+            target: "test_server"
+            pkg: "perl libperl-dev make" 
+          - component: "Linux Agent"
+            target: "test_agent_linux"
+            pkg: "" # Already has build-essential
+          - component: "Windows Agent"
+            target: "test_agent_win32"
+            pkg: "autoconf automake binutils-mingw-w64 gcc-mingw-w64-x86-64"
+
+    env:
+      REPO_PATH: ${{ github.workspace }}
+      HOST: x86_64-w64-mingw32
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        id: cache-apt
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-${{ matrix.component }}-${{ hashFiles('**/Makefile*') }}
+
+      - name: Install Dependencies
+        if: matrix.pkg != ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.pkg }}
+
+      - name: Run ${{ matrix.component }} Tests
+        run: make ${{ matrix.target }}
