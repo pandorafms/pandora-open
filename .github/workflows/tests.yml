@@ -18,7 +18,7 @@ jobs:
             pkg: "libperl-critic-perl"
           - component: "Windows Agent"
             target: "test_agent_win32"
-            pkg: "autoconf automake binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-x86-64-dev nsis"
+            pkg: "autoconf automake binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-x86-64-dev nsis cppcheck"
 
     env:
       REPO_PATH: ${{ github.workspace }}

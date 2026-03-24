@@ -1,8 +1,8 @@
-name: Daily VM Build
+name: VM Build
 
 on:
   schedule:
-    - cron: '0 3 * * *' # 3:00 AM UTC
+    - cron: '0 0 * * 0' # Every Sunday at 00:00 UTC
   workflow_dispatch: # Allows manual testing
 
 jobs:
@@ -47,15 +47,29 @@ jobs:
           
           # Get the name of the VM we just created
           VM_ID=$(sudo multipass list --format csv | grep Running | cut -d, -f1 | head -n 1)
+          if [ -z "$VM_ID" ]; then echo "No running VM found"; exit 1; fi
           
-          if [ -z "$VM_ID" ]; then 
-            echo "No running VM found"
+          echo "Verifying Pandora FMS Console on $VM_ID..."
+      
+          # Loop until the console responds
+          SUCCESS=0
+          for i in {1..15}; do
+            # -L follows redirects, -s is silent, -I gets headers
+            if sudo multipass exec $VM_ID -- curl -L -s -I http://localhost/pandora_console | grep -q "200 OK"; then
+              echo "Success: Pandora FMS Console is reachable!"
+              SUCCESS=1
+              break
+            fi
+            echo "Attempt $i/15: Console not ready yet, sleeping 10s..."
+            sleep 10
+          done
+      
+          if [ $SUCCESS -ne 1 ]; then
+            echo "Error: Console timed out."
+            sudo multipass exec $VM_ID -- curl -L http://localhost/pandora_console | head -n 20
             exit 1
           fi
-          
-          # Check if the console is serving the 200 OK
-          sudo multipass exec $VM_ID -- curl -s -I http://localhost/pandora_console | grep "200 OK"
-
+    
       - name: Cleanup VM
         if: always() # This runs even if the build fails
         run: |
