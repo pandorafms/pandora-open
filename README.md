@@ -1,5 +1,8 @@
 ![logo Pandora-Open](https://pandoraopen.io/wp-content/uploads/2025/12/Pandora-Open-mini.png)
 
+[![Tests](https://github.com/pandorafms/pandora-open/actions/workflows/tests.yml/badge.svg)](https://github.com/pandorafms/pandora-open/actions/workflows/tests.yml)
+[![VM Build](https://github.com/pandorafms/pandora-open/actions/workflows/vm_build.yml/badge.svg)](https://github.com/pandorafms/pandora-open/actions/workflows/vm_build.yml)
+
 ## What is Pandora Open?
 
 Pandora Open is the direct open-source continuation of Pandora FMS, the monitoring platform that has been powering enterprise infrastructure since 2004. After more than a decade of commercial dual-licensing, Pandora Open represents a clean break: a fully community-driven release that strips away proprietary layers and returns the project to its roots.
