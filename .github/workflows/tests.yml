@@ -12,17 +12,17 @@ jobs:
         include:
           - component: "Server"
             target: "test_server"
-            pkg: "perl libperl-dev make" 
+            pkg: "perl libperl-dev make libwww-perl libdbi-perl libdbd-mysql-perl libjson-perl libxml-simple-perl libxml-twig-perl libxml-parser-perl libhtml-tree-perl libnetaddr-ip-perl libio-socket-inet6-perl"
           - component: "Linux Agent"
             target: "test_agent_linux"
-            pkg: "" # Already has build-essential
+            pkg: "libperl-critic-perl"
           - component: "Windows Agent"
             target: "test_agent_win32"
-            pkg: "autoconf automake binutils-mingw-w64 gcc-mingw-w64-x86-64"
+            pkg: "autoconf automake binutils-mingw-w64 gcc-mingw-w64-x86-64 nsis"
 
     env:
       REPO_PATH: ${{ github.workspace }}
-      HOST: x86_64-w64-mingw32
+      ARCH: x86_64
 
     steps:
       - name: Check out code
@@ -30,16 +30,23 @@ jobs:
 
       - name: Cache APT packages
         uses: actions/cache@v4
-        id: cache-apt
         with:
-          path: /var/cache/apt/archives
+          path: ~/apt-cache
           key: ${{ runner.os }}-apt-${{ matrix.component }}-${{ hashFiles('**/Makefile*') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-${{ matrix.component }}-
 
       - name: Install Dependencies
         if: matrix.pkg != ''
         run: |
+          mkdir -p ~/apt-cache/partial
           sudo apt-get update
-          sudo apt-get install -y ${{ matrix.pkg }}
+          sudo apt-get -o dir::cache::archives="~/apt-cache" install -y ${{ matrix.pkg }}
 
       - name: Run ${{ matrix.component }} Tests
-        run: make ${{ matrix.target }}
+        run: |
+          if [ "${{ matrix.component }}" == "Windows Agent" ]; then
+            export HOST="x86_64-w64-mingw32"
+            export CC="$HOST-gcc"
+          fi
+          make ${{ matrix.target }}

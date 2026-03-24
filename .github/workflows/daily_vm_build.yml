@@ -20,29 +20,29 @@ jobs:
           sudo snap install lxd
           sudo lxd init --auto
           sudo multipass set local.driver=lxd
+          sudo usermod -aG multipass $USER
           # Wait for the daemon to settle
           sleep 10
 
       - name: Build VM (Non-Interactive)
         run: |
-          # We bypass the 'read' prompt in vm_clean by piping 'y' into the command
-          echo "y" | make vm VM_NAME="pandora-ci-$(date +%s)"
+          VM_NAME="pandora-ci-$(date +%s)"
+          echo "Building VM: $VM_NAME"
+          sg multipass -c "echo 'y' | make vm VM_NAME=$VM_NAME"
         env:
           REPO_PATH: ${{ github.workspace }}
 
       - name: Verify Installation
         run: |
+          sg multipass -c "multipass list"
           # Get the name of the VM we just created
-          VM_ID=$(multipass list --format csv | grep Running | cut -d, -f1 | head -n 1)
-          echo "Verifying VM: $VM_ID"
-          
-          # Run curl INSIDE the VM to see if Apache is serving the console
-          multipass exec $VM_ID -- curl -s -I http://localhost/pandora_console | grep "200 OK"
+          VM_ID=$(sg multipass -c "multipass list --format csv" | grep Running | cut -d, -f1 | head -n 1)
+          if [ -z "$VM_ID" ]; then echo "No running VM found"; exit 1; fi
+          sg multipass -c "multipass exec $VM_ID -- curl -s -I http://localhost/pandora_console" | grep "200 OK"
 
       - name: Cleanup VM
         if: always() # This runs even if the build fails
         run: |
-          # Use a wildcard or the stored name to purge the VM
-          multipass stop --all
-          multipass delete --all
-          multipass purge
+          sg multipass -c "multipass stop --all"
+          sg multipass -c "multipass delete --all"
+          sg multipass -c "multipass purge"
