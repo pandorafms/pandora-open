@@ -14,18 +14,6 @@ ${StrRep}
 ${UnStrRep}
 
 ; --- Macros ---
-!macro DetectArchitecture
-  !ifndef ARCH
-    !tempfile DETECT_TEMP
-    !system "file '${REPO_PATH}/PandoraAgent.exe' | grep -q 'PE32+' && echo 'x64' > '${DETECT_TEMP}' || echo 'x86' > '${DETECT_TEMP}'"
-    !searchparse /file '${DETECT_TEMP}' '' ARCH ''
-    !delfile '${DETECT_TEMP}'
-    !if "${ARCH}" == ""
-      !error "Failed to detect architecture of PandoraAgent.exe."
-    !endif
-  !endif
-!macroend
-
 !macro AddToPath Path
   ReadRegStr $0 HKCU "Environment" "PATH"
   ${StrRep} $1 "$0" "${Path}" ""
@@ -44,19 +32,23 @@ ${UnStrRep}
   SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
 !macroend
 
-; --- Defines ---
-!define PRODUCT_NAME "PandoraOpenAgent"
-!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\PandoraAgent.exe"
-!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
-!define PRODUCT_UNINST_ROOT_KEY "HKLM"
-
-!insertmacro DetectArchitecture
+!ifndef ARCH
+  !error "ARCH not defined. Use -DARCH=x86 or -DARCH=x64 when calling makensis."
+!endif
 
 !if "${ARCH}" == "x86"
   !define INSTALL_DIR "$PROGRAMFILES32\pandora_agent"
 !else
   !define INSTALL_DIR "$PROGRAMFILES64\pandora_agent"
 !endif
+
+; --- Defines ---
+!define PRODUCT_NAME "PandoraOpenAgent"
+!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\PandoraAgent.exe"
+!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+!define PRODUCT_UNINST_ROOT_KEY "HKLM"
+
+
 
 ; --- MUI Settings ---
 !define MUI_ABORTWARNING
