@@ -34,15 +34,32 @@ jobs:
         run: |
           # Use a unique name for the VM to avoid conflicts in concurrent runs
           # Pipe 'y' to bypass the interactive confirmation in vm_clean
-          echo "y" | make vm VM_NAME="pandora-ci-${{ github.run_id }}"
+          echo "y" | sudo -E make vm VM_NAME="pandora-ci-${{ github.run_id }}"
+        env:
+          REPO_PATH: ${{ github.workspace }}
 
       - name: Verify Installation
         run: |
           # Get the name of the VM we just created
           VM_ID=$(multipass list --format csv | grep "pandora-ci-${{ github.run_id }}" | cut -d, -f1)
           echo "Verifying VM: $VM_ID"
-          # Run curl INSIDE the VM to see if Apache is serving the console
-          multipass exec $VM_ID -- curl -s -I http://localhost/pandora_console | grep "200 OK"
+          
+          SUCCESS=0
+          for i in {1..15}; do
+            if multipass exec $VM_ID -- curl -L -s -I http://localhost/pandora_console | grep -q "200 OK"; then
+              echo "Success: Pandora FMS Console is reachable!"
+              SUCCESS=1
+              break
+            fi
+            echo "Attempt $i/15: Console not ready yet, sleeping 10s..."
+            sleep 10
+          done
+          
+          if [ $SUCCESS -ne 1 ]; then
+            echo "Error: Console timed out."
+            multipass exec $VM_ID -- curl -L http://localhost/pandora_console | head -n 20
+            exit 1
+          fi
 
       - name: Cleanup VM
         if: always()
