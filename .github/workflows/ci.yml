@@ -1,0 +1,57 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  workflow_call: # Allows this workflow to be called by other workflows (e.g., release)
+
+jobs:
+  unit-tests:
+    name: Unit & Component Tests
+    uses: ./.github/workflows/tests.yml
+
+  deployment-test:
+    name: VM Deployment Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install Multipass & LXD
+        run: |
+          sudo snap install multipass
+          sudo snap install lxd
+          sudo lxd init --auto
+          sudo multipass set local.driver=lxd
+          sudo sysctl -w net.ipv4.ip_forward=1
+          sudo iptables -P FORWARD ACCEPT
+          sudo iptables -A FORWARD -o lxdbr0 -j ACCEPT
+          sudo iptables -A FORWARD -i lxdbr0 -j ACCEPT
+          sleep 20
+
+      - name: Run Full VM Deployment Test
+        run: |
+          # Use a unique name for the VM to avoid conflicts in concurrent runs
+          # Pipe 'y' to bypass the interactive confirmation in vm_clean
+          echo "y" | make vm VM_NAME="pandora-ci-${{ github.run_id }}"
+
+      - name: Verify Installation
+        run: |
+          # Get the name of the VM we just created
+          VM_ID=$(multipass list --format csv | grep "pandora-ci-${{ github.run_id }}" | cut -d, -f1)
+          echo "Verifying VM: $VM_ID"
+          # Run curl INSIDE the VM to see if Apache is serving the console
+          multipass exec $VM_ID -- curl -s -I http://localhost/pandora_console | grep "200 OK"
+
+      - name: Cleanup VM
+        if: always()
+        run: |
+          VM_ID=$(multipass list --format csv | grep "pandora-ci-${{ github.run_id }}" | cut -d, -f1)
+          if [ -n "$VM_ID" ]; then
+            multipass stop $VM_ID
+            multipass delete $VM_ID
+            multipass purge
+          else
+            echo "No matching CI VM found to clean up."
+          fi
