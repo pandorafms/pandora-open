@@ -6,53 +6,47 @@ on:
       - '*.*.*'
 
 jobs:
-  run-tests:
-    uses: ./.github/workflows/tests.yml
+  # First, run all tests via the main CI workflow to ensure the tagged commit is valid.
+  verify:
+    name: Verify Release Candidate
+    uses: ./.github/workflows/ci.yml
 
-  run-vm-build:
-    uses: ./.github/workflows/vm_build.yml
-
-  release:
-    name: Create Release
-    runs-on: ubuntu-24.04
-    needs: [run-tests, run-vm-build]
+  # If verification passes, build the release artifacts and publish.
+  build-and-release:
+    name: Build and Release
+    needs: verify
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Cache APT packages
-        uses: actions/cache@v4
-        with:
-          path: ~/apt-cache/archives
-          key: ${{ runner.os }}-apt-build-${{ hashFiles('**/Makefile*') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-build-
-
-      - name: Get version from tag
-        id: get_version
-        run: echo "version=$(echo $GITHUB_REF | sed -e 's|refs/tags/v*||')" >> $GITHUB_OUTPUT
-
-      - name: Install build dependencies
+      - name: Install Multipass & LXD
         run: |
-          mkdir -p $HOME/apt-cache/archives/partial
-          sudo apt-get update
-          sudo apt-get -o dir::cache::archives="$HOME/apt-cache/archives" install -y autoconf automake binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-x86-64-dev nsis
+          sudo snap install multipass
+          sudo snap install lxd
+          sudo lxd init --auto
+          sudo multipass set local.driver=lxd
+          sudo sysctl -w net.ipv4.ip_forward=1
+          sudo iptables -P FORWARD ACCEPT
+          sudo iptables -A FORWARD -o lxdbr0 -j ACCEPT
+          sudo iptables -A FORWARD -i lxdbr0 -j ACCEPT
+          sleep 20
 
-      - name: Set version in files
-        run: make version VERSION=${{ steps.get_version.outputs.version }}
-
-      - name: Build artifacts
+      - name: Build Release Artifacts
         run: |
-          export HOST="x86_64-w64-mingw32"
-          make all agent_windows
+          make all
+          make agent_windows
 
-      - name: Create Release and Upload Artifacts
+      - name: Create GitHub Release and Upload Artifacts
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            build/pandoraopen-console-${{ steps.get_version.outputs.version }}.tar.gz
-            build/pandoraopen-server-${{ steps.get_version.outputs.version }}.tar.gz
-            build/pandoraopen-agent-${{ steps.get_version.outputs.version }}.tar.gz
-            build/PandoraOpenAgent_Setup-${{ steps.get_version.outputs.version }}.exe
+          files: build/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Cleanup Build VM
+        if: always()
+        run: |
+          # The agent_windows target uses the default VM_NAME 'PandoraOpen' from the Makefile.
+          # We pipe 'y' to non-interactively confirm the vm_clean prompt.
+          echo 'y' | make vm_clean

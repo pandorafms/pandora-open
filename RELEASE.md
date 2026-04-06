@@ -8,22 +8,15 @@ Releases are created automatically by a GitHub Actions workflow. The process is 
 
 ### Tagging Convention
 
-To trigger a new release, create and push a new tag following semantic versioning. Both `vX.Y.Z` and `X.Y.Z` formats are supported.
+To trigger a new release, create and push a new **annotated tag** following semantic versioning. Using the `v` prefix (e.g., `vX.Y.Z`) is highly recommended for release tags.
 
 ```bash
-# Example for version 1.2.3
-git tag 1.2.3
-git push origin 1.2.3
+# Example for version 1.2.3 (use -a for an annotated tag)
+git tag -a v1.2.3 -m "Release v1.2.3"
+git push --follow-tags
 ```
 
-or
-
-```bash
-git tag v1.2.3
-git push origin v1.2.3
-```
-
-The workflow will automatically strip the `v` prefix to create a standardized release version (e.g., `1.2.3`).
+The workflow will automatically detect the new tag and trigger the release process.
 
 ### Release Artifacts
 

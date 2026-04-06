@@ -19,7 +19,7 @@ VM_NAME ?= PandoraOpen
 VERSION_FILES = pandora_agent/unix/pandora_agent pandora_agent/win32/pandora.cc pandora_server/lib/PandoraOpen/Config.pm
 
 # Targets
-.PHONY: all clean console server agent_linux agent_windows test test_server test_agent_linux test_agent_win32 vm vm_clean vm_setup vm_install vm_shell vm_packages vm_transfer vm_reset vm_mount vm_umount
+.PHONY: all clean console server agent_linux agent_windows test test_server test_agent_linux test_agent_win32 vm vm_clean vm_setup vm_install vm_shell vm_packages vm_transfer vm_reset vm_mount vm_umount _orchestrate_win_build_and_copy_out
 
 all: console server agent_linux
 
@@ -29,7 +29,9 @@ server: $(BUILD_PATH)/pandoraopen-server-$(VERSION).tar.gz
 
 agent_linux: $(BUILD_PATH)/pandoraopen-agent-$(VERSION).tar.gz
 
-agent_windows: $(BUILD_PATH)/$(INSTALLER_NAME)
+# Old agent_windows: $(BUILD_PATH)/$(INSTALLER_NAME)
+agent_windows: vm_setup vm_transfer _orchestrate_win_build_and_copy_out
+	@echo "Windows agent build orchestrated through VM complete."
 
 # Ensure build directory exists
 $(BUILD_PATH):
@@ -51,8 +53,26 @@ $(BUILD_PATH)/pandoraopen-agent-$(VERSION).tar.gz: $(BUILD_PATH)
 	@echo "Building Linux agent package..."
 	cd $(REPO_PATH)/pandora_agent && tar zcvf $(BUILD_PATH)/pandoraopen-agent-$(VERSION).tar.gz --exclude \.git unix
 
-# Windows agent installer
-$(BUILD_PATH)/$(INSTALLER_NAME): $(BUILD_PATH)
+# Orchestrates the build inside the VM and copies the artifact out
+_orchestrate_win_build_and_copy_out:
+	@echo "Building Windows agent inside VM '$(VM_NAME)'..."
+	multipass exec $(VM_NAME) -- bash -c "cd /tmp/pandoraopen && make _build_windows_agent_internal"
+	
+	@echo "Copying Windows agent installer from VM '$(VM_NAME)'..."
+	mkdir -p $(BUILD_PATH) # Ensure local build directory exists
+	multipass transfer $(VM_NAME):/tmp/pandoraopen/build/$(INSTALLER_NAME) $(BUILD_PATH)/
+	
+	@if [ -f "$(BUILD_PATH)/$(INSTALLER_NAME)" ]; then \
+		echo "✓ Windows installer copied to: $(BUILD_PATH)/$(INSTALLER_NAME)"; \
+		ls -lh "$(BUILD_PATH)/$(INSTALLER_NAME)"; \
+	else \
+		echo "Error: Installer not found in VM or failed to copy!"; \
+		exit 1; \
+	fi
+
+# This target contains the original build logic for the Windows agent.
+# It is designed to be run either on the host with cross-compilers or inside the VM.
+_build_windows_agent_internal: $(BUILD_PATH)
 	@echo "Building Windows agent installer (version $(VERSION))..."
 	@echo "Using cross-compiler: $(HOST)"
 	
@@ -163,13 +183,20 @@ vm_clean:
 
 # Set up VM
 vm_setup:
-	@echo "Launching VM..."
-	multipass launch jammy --name $(VM_NAME) --disk 30G --memory 4G
-	@echo "Starting VM..."
-	multipass start $(VM_NAME)
-	@echo "Installing make in VM..."
+	@echo "Ensuring VM '$(VM_NAME)' is set up and running..."
+	@if ! multipass list --format csv 2>/dev/null | grep -q "^$(VM_NAME),"; then \
+		echo "VM '$(VM_NAME)' not found. Launching a new one..."; \
+		multipass launch jammy --name $(VM_NAME) --disk 30G --memory 4G; \
+	else \
+		echo "VM '$(VM_NAME)' already exists."; \
+	fi
+	@if ! multipass list --format csv 2>/dev/null | grep -q "^$(VM_NAME),.*,Running"; then \
+		echo "VM is not running. Starting it now..."; \
+		multipass start $(VM_NAME); \
+	fi
+	@echo "Ensuring make and Windows build tools are installed in VM..."
 	multipass exec $(VM_NAME) -- sudo apt-get update
-	multipass exec $(VM_NAME) -- sudo apt-get install -y make
+	multipass exec $(VM_NAME) -- sudo apt-get install -y make autoconf automake binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-x86-64-dev nsis
 
 # Transfer code into VM (safe to run multiple times)
 vm_transfer:
