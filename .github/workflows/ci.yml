@@ -41,12 +41,12 @@ jobs:
       - name: Verify Installation
         run: |
           # Get the name of the VM we just created
-          VM_ID=$(multipass list --format csv | grep "pandora-ci-${{ github.run_id }}" | cut -d, -f1)
+          VM_ID=$(sudo multipass list --format csv | grep "pandora-ci-${{ github.run_id }}" | cut -d, -f1)
           echo "Verifying VM: $VM_ID"
           
           SUCCESS=0
           for i in {1..15}; do
-            if multipass exec $VM_ID -- curl -L -s -I http://localhost/pandora_console | grep -q "200 OK"; then
+            if sudo multipass exec $VM_ID -- curl -L -s -I http://localhost/pandora_console | grep -q "200 OK"; then
               echo "Success: Pandora FMS Console is reachable!"
               SUCCESS=1
               break
@@ -57,18 +57,18 @@ jobs:
           
           if [ $SUCCESS -ne 1 ]; then
             echo "Error: Console timed out."
-            multipass exec $VM_ID -- curl -L http://localhost/pandora_console | head -n 20
+            sudo multipass exec $VM_ID -- curl -L http://localhost/pandora_console | head -n 20
             exit 1
           fi
 
       - name: Cleanup VM
         if: always()
         run: |
-          VM_ID=$(multipass list --format csv | grep "pandora-ci-${{ github.run_id }}" | cut -d, -f1)
+          VM_ID=$(sudo multipass list --format csv | grep "pandora-ci-${{ github.run_id }}" | cut -d, -f1)
           if [ -n "$VM_ID" ]; then
-            multipass stop $VM_ID
-            multipass delete $VM_ID
-            multipass purge
+            sudo multipass stop $VM_ID
+            sudo multipass delete $VM_ID
+            sudo multipass purge
           else
             echo "No matching CI VM found to clean up."
           fi
