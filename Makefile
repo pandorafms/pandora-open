@@ -58,7 +58,7 @@ $(BUILD_PATH)/pandoraopen-agent-$(VERSION).tar.gz: $(BUILD_PATH)
 # Orchestrates the build inside the VM and copies the artifact out
 _orchestrate_win_build_and_copy_out: vm_transfer
 	@echo "Building Windows agent inside VM '$(VM_NAME)'..."
-	multipass exec $(VM_NAME) -- bash -c "cd /tmp/pandoraopen && make _build_windows_agent_internal"
+	multipass exec $(VM_NAME) -- bash -c "export GLIBC_TUNABLES='glibc.malloc.tcache_count=0' && export MALLOC_CHECK_='0' && cd /tmp/pandoraopen && make _build_windows_agent_internal"
 	
 	@echo "Copying Windows agent installer from VM '$(VM_NAME)'..."
 	mkdir -p $(BUILD_PATH) # Ensure local build directory exists
@@ -114,7 +114,6 @@ _build_windows_agent_internal: $(BUILD_PATH)
 	fi
 	
 	@makensis \
-		-V4 \
 		-DPRODUCT_VERSION="$(VERSION)" \
 		-DREPO_PATH="$(WIN32_DIR)" \
 		-DFILE_NAME="$(BUILD_PATH)/$(INSTALLER_NAME)" \
