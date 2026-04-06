@@ -6,9 +6,16 @@ on:
       - '*.*.*'
 
 jobs:
+  run-tests:
+    uses: ./.github/workflows/tests.yml
+
+  run-vm-build:
+    uses: ./.github/workflows/vm_build.yml
+
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    needs: [run-tests, run-vm-build]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -29,7 +36,20 @@ jobs:
         run: |
           mkdir -p $HOME/apt-cache/archives/partial
           sudo apt-get update
-          sudo apt-get -o dir::cache::archives="$HOME/apt-cache/archives" install -y autoconf automake binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-x86-64-dev nsis
+          sudo apt-get -o dir::cache::archives="$HOME/apt-cache/archives" install -y autoconf automake binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-x86-64-dev
+
+      - name: Install NSIS
+        run: |
+          NSIS_VERSION=3.09
+          NSIS_FILENAME=nsis-${NSIS_VERSION}-linux
+          NSIS_ARCHIVE=${NSIS_FILENAME}.tar.bz2
+          
+          wget https://downloads.sourceforge.net/project/nsis/NSIS%203/${NSIS_VERSION}/${NSIS_ARCHIVE} -O /tmp/${NSIS_ARCHIVE}
+          tar -xjvf /tmp/${NSIS_ARCHIVE} -C /tmp/
+          
+          sudo mkdir -p /usr/share/nsis
+          sudo cp -r /tmp/${NSIS_FILENAME}/* /usr/share/nsis/
+          sudo ln -s /usr/share/nsis/makensis /usr/bin/makensis
 
       - name: Set version in files
         run: make version VERSION=${{ steps.get_version.outputs.version }}

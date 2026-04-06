@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: '0 0 * * 0' # Every Sunday at 00:00 UTC
   workflow_dispatch: # Allows manual testing
+  workflow_call: # Allows to be called from other workflows
 
 jobs:
   build-vm:
