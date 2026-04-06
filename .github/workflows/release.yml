@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        with:
+          path: ~/apt-cache/archives
+          key: ${{ runner.os }}-apt-build-${{ hashFiles('**/Makefile*') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-build-
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=$(echo $GITHUB_REF | sed -e 's|refs/tags/v*||')" >> $GITHUB_OUTPUT
+
+      - name: Install build dependencies
+        run: |
+          mkdir -p $HOME/apt-cache/archives/partial
+          sudo apt-get update
+          sudo apt-get -o dir::cache::archives="$HOME/apt-cache/archives" install -y autoconf automake binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-x86-64-dev nsis
+
+      - name: Set version in files
+        run: make version VERSION=${{ steps.get_version.outputs.version }}
+
+      - name: Build artifacts
+        run: |
+          export HOST="x86_64-w64-mingw32"
+          make all agent_windows
+
+      - name: Create Release and Upload Artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/pandoraopen-console-${{ steps.get_version.outputs.version }}.tar.gz
+            build/pandoraopen-server-${{ steps.get_version.outputs.version }}.tar.gz
+            build/pandoraopen-agent-${{ steps.get_version.outputs.version }}.tar.gz
+            build/PandoraOpenAgent_Setup-${{ steps.get_version.outputs.version }}.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
