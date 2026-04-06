@@ -1,11 +1,7 @@
 ![logo Pandora-Open](https://pandoraopen.io/wp-content/uploads/2025/12/Pandora-Open-mini.png)
 
 [![Tests](https://github.com/pandorafms/pandora-open/actions/workflows/tests.yml/badge.svg)](https://github.com/pandorafms/pandora-open/actions/workflows/tests.yml)
-<<<<<<< Updated upstream
-[![VM Build](https://github.com/pandorafms/pandora-open/actions/workflows/vm_build.yml/badge.svg)](https://github.com/pandorafms/pandora-open/actions/workflows/vm_build.yml)
-=======
-[![Weekly VM Build](https://github.com/pandorafms/pandora-open/actions/workflows/vm_build.yml/badge.svg)](https://github.com/pandorafms/pandora-open/actions/workflows/vm_build.yml)
->>>>>>> Stashed changes
+[![CI](https://github.com/pandorafms/pandora-open/actions/workflows/ci.yml/badge.svg)](https://github.com/pandorafms/pandora-open/actions/workflows/ci.yml)
 
 ## What is Pandora Open?
 
