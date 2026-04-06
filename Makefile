@@ -57,9 +57,6 @@ $(BUILD_PATH)/pandoraopen-agent-$(VERSION).tar.gz: $(BUILD_PATH)
 
 # Orchestrates the build inside the VM and copies the artifact out
 _orchestrate_win_build_and_copy_out: vm_transfer
-	@echo "Content of pandora_open.nsi in VM before makensis:"
-	@multipass exec $(VM_NAME) -- cat /tmp/pandoraopen/pandora_agent/win32/installer/pandora_open.nsi
-	
 	@echo "Building Windows agent inside VM '$(VM_NAME)'..."
 	multipass exec $(VM_NAME) -- bash -c "cd /tmp/pandoraopen && make _build_windows_agent_internal"
 	
@@ -117,6 +114,7 @@ _build_windows_agent_internal: $(BUILD_PATH)
 	fi
 	
 	@makensis \
+		-V4 \
 		-DPRODUCT_VERSION="$(VERSION)" \
 		-DREPO_PATH="$(WIN32_DIR)" \
 		-DFILE_NAME="$(BUILD_PATH)/$(INSTALLER_NAME)" \
