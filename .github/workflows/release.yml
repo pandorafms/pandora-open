@@ -35,7 +35,7 @@ jobs:
       - name: Build Release Artifacts
         run: |
           make all
-          make agent_windows
+          sudo make agent_windows
 
       - name: Create GitHub Release and Upload Artifacts
         uses: softprops/action-gh-release@v2
@@ -49,4 +49,4 @@ jobs:
         run: |
           # The agent_windows target uses the default VM_NAME 'PandoraOpen' from the Makefile.
           # We pipe 'y' to non-interactively confirm the vm_clean prompt.
-          echo 'y' | make vm_clean
+          echo 'y' | sudo make vm_clean
