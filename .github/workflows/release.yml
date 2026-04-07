@@ -35,7 +35,8 @@ jobs:
       - name: Build Release Artifacts
         run: |
           make all
-          sudo make agent_windows
+          # Temporarily commented out to debug the makensis double free issue
+          # sudo make agent_windows
 
       - name: Create GitHub Release and Upload Artifacts
         uses: softprops/action-gh-release@v2
