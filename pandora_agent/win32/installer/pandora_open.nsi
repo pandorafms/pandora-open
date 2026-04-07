@@ -8,10 +8,28 @@
 !include "x64.nsh"
 !include "FileFunc.nsh"
 
+; --- Standard String Functions Library ---
+!include "StrFunc.nsh"
+${StrRep}
+${UnStrRep}
+
 ; --- Macros ---
+!macro DetectArchitecture
+  !ifndef ARCH
+    !tempfile DETECT_TEMP
+    !system "file '${REPO_PATH}/PandoraAgent.exe' | grep -q 'PE32+' && echo 'x64' > '${DETECT_TEMP}' || echo 'x86' > '${DETECT_TEMP}'"
+    !searchparse /file '${DETECT_TEMP}' '' ARCH ''
+    !delfile '${DETECT_TEMP}'
+    !if "${ARCH}" == ""
+      !error "Failed to detect architecture of PandoraAgent.exe."
+    !endif
+  !endif
+!macroend
+
 !macro AddToPath Path
   ReadRegStr $0 HKCU "Environment" "PATH"
-  ${If} ${FileFunc::StrStr} "$0" "${Path}" == "" ; If Path is NOT found
+  ${StrRep} $1 "$0" "${Path}" ""
+  ${If} $1 == $0
     StrCpy $0 "$0;${Path}"
     WriteRegExpandStr HKCU "Environment" "PATH" $0
     SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
@@ -19,70 +37,12 @@
 !macroend
 
 !macro un.RemoveFromPath Path
-  Push $R0 ; Original path
-  Push $R1 ; Current path being processed
-  Push $R2 ; Temporary for substring operations
-  Push $R3 ; Length of target path
-
-  ReadRegStr $R0 HKCU "Environment" "PATH"
-  StrCpy $R1 $R0
-  StrLen $R3 "${Path}"
-
-  ; Remove "${Path};"
-  loop_remove_path_semicolon:
-    ${FileFunc::StrStr} $R1 "${Path};" $R2 ; Find "${Path};"
-    ${If} $R2 == "" ; Not found
-      Goto done_remove_path_semicolon
-    ${EndIf}
-
-    ; Reconstruct $R1 without "${Path};"
-    StrCpy $R0 $R1 $R2 ; Part before "${Path};"
-    IntOp $R2 $R2 + $R3 + 1 ; Advance $R2 past "${Path};" (length of Path + 1 for semicolon)
-    StrCpy $R1 "$R0$R1" "" $R2 ; Rebuild $R1
-    Goto loop_remove_path_semicolon
-  done_remove_path_semicolon:
-
-  ; Remove "${Path}" (in case it's at the end without a semicolon, or was the only entry)
-  loop_remove_path:
-    ${FileFunc::StrStr} $R1 "${Path}" $R2 ; Find "${Path}"
-    ${If} $R2 == "" ; Not found
-      Goto done_remove_path
-    ${EndIf}
-
-    ; Reconstruct $R1 without "${Path}"
-    StrCpy $R0 $R1 $R2 ; Part before "${Path}"
-    IntOp $R2 $R2 + $R3 ; Advance $R2 past "${Path}"
-    StrCpy $R1 "$R0$R1" "" $R2 ; Rebuild $R1
-    Goto loop_remove_path
-  done_remove_path:
-
-  ; Remove any leading/trailing semicolons or double semicolons
-  ; Simplified cleanup - more robust logic might be needed for all edge cases
-  ${FileFunc::StrRep} $R1 "$R1" ";;" ";" ; Replace double semicolons
-  ${If} ${FileFunc::StrStr} $R1 ";$" == "" ; If $R1 ends with a semicolon
-    StrCpy $R1 $R1 $(StrLen $R1) -1
-  ${EndIf}
-  ${If} ${FileFunc::StrStr} $R1 "^;" == "" ; If $R1 starts with a semicolon
-    StrCpy $R1 $R1 "" 1
-  ${EndIf}
-
-  WriteRegExpandStr HKCU "Environment" "PATH" $R1
+  ReadRegStr $0 HKCU "Environment" "PATH"
+  ${UnStrRep} $0 "$0" "${Path};" ""
+  ${UnStrRep} $0 "$0" "${Path}" ""
+  WriteRegExpandStr HKCU "Environment" "PATH" $0
   SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
-  Pop $R3
-  Pop $R2
-  Pop $R1
-  Pop $R0
 !macroend
-
-!ifndef ARCH
-  !error "ARCH not defined. Use -DARCH=x86 or -DARCH=x64 when calling makensis."
-!endif
-
-!if "${ARCH}" == "x86"
-  !define INSTALL_DIR "$PROGRAMFILES32\pandora_agent"
-!else
-  !define INSTALL_DIR "$PROGRAMFILES64\pandora_agent"
-!endif
 
 ; --- Defines ---
 !define PRODUCT_NAME "PandoraOpenAgent"
@@ -90,7 +50,13 @@
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
+!insertmacro DetectArchitecture
 
+!if "${ARCH}" == "x86"
+  !define INSTALL_DIR "$PROGRAMFILES32\pandora_agent"
+!else
+  !define INSTALL_DIR "$PROGRAMFILES64\pandora_agent"
+!endif
 
 ; --- MUI Settings ---
 !define MUI_ABORTWARNING
@@ -228,11 +194,30 @@ Section -Post
 SectionEnd
 
 Function modify_conf_file
-    ; Replace @@INST_DIR@@
-    ExecWait '"powershell.exe" -Command "(Get-Content \"$INSTDIR\pandora_agent.conf\") -replace \"@@INST_DIR@@\", \"$INSTDIR\" | Set-Content \"$INSTDIR\pandora_agent.conf\""'
+    ; Ensure we are working with a fresh copy to avoid double-processing
+    ClearErrors
+    FileOpen $0 "$INSTDIR\pandora_agent.conf" r
+    FileOpen $1 "$INSTDIR\pandora_agent.conf.tmp" w
+    
+    IfErrors mcf_done
 
-    ; Replace @@SERVER_IP@@
-    ExecWait '"powershell.exe" -Command "(Get-Content \"$INSTDIR\pandora_agent.conf\") -replace \"@@SERVER_IP@@\", \"$serverIpConf\" | Set-Content \"$INSTDIR\pandora_agent.conf\""'
+    mcf_loop:
+        FileRead $0 $2
+        IfErrors mcf_close
+
+        ; Search and replace
+        ${StrRep} $2 "$2" "@@INST_DIR@@" "$INSTDIR"
+        ${StrRep} $2 "$2" "@@SERVER_IP@@" "$serverIpConf"
+
+        FileWrite $1 $2
+        Goto mcf_loop
+
+    mcf_close:
+        FileClose $1
+        FileClose $0
+        Delete "$INSTDIR\pandora_agent.conf"
+        Rename "$INSTDIR\pandora_agent.conf.tmp" "$INSTDIR\pandora_agent.conf"
+    mcf_done:
 FunctionEnd
 
 ; --- Uninstaller ---

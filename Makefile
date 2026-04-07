@@ -9,8 +9,6 @@ VERSION := $(shell grep 'our $$VERSION =' $(REPO_PATH)/pandora_server/lib/Pandor
 
 # Windows build settings
 HOST ?= x86_64-w64-mingw32
-# Determine architecture from HOST (e.g., x86_64 -> x64, i686 -> x86)
-ARCH := $(shell echo $(HOST) | grep -q "x86_64" && echo "x64" || echo "x86")
 WIN32_DIR := $(REPO_PATH)/pandora_agent/win32
 INSTALLER_NAME ?= PandoraOpenAgent_Setup-$(VERSION).exe
 
@@ -56,7 +54,7 @@ $(BUILD_PATH)/pandoraopen-agent-$(VERSION).tar.gz: $(BUILD_PATH)
 	cd $(REPO_PATH)/pandora_agent && tar zcvf $(BUILD_PATH)/pandoraopen-agent-$(VERSION).tar.gz --exclude \.git unix
 
 # Orchestrates the build inside the VM and copies the artifact out
-_orchestrate_win_build_and_copy_out: vm_transfer
+_orchestrate_win_build_and_copy_out:
 	@echo "Building Windows agent inside VM '$(VM_NAME)'..."
 	multipass exec $(VM_NAME) -- bash -c "cd /tmp/pandoraopen && make _build_windows_agent_internal"
 	
@@ -117,7 +115,6 @@ _build_windows_agent_internal: $(BUILD_PATH)
 		-DPRODUCT_VERSION="$(VERSION)" \
 		-DREPO_PATH="$(WIN32_DIR)" \
 		-DFILE_NAME="$(BUILD_PATH)/$(INSTALLER_NAME)" \
-		-DARCH="$(ARCH)" \
 		$(WIN32_DIR)/installer/pandora_open.nsi 2>&1 | grep -v "warning 6000\|warning 6001\|warning 6010"
 	
 	@if [ -f "$(BUILD_PATH)/$(INSTALLER_NAME)" ]; then \
