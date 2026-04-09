@@ -41,7 +41,7 @@ jobs:
       - name: Create GitHub Release and Upload Artifacts
         uses: softprops/action-gh-release@v2
         with:
-          files: build/*
+          files: build/*.tar.gz build/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
