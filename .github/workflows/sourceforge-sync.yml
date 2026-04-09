@@ -13,6 +13,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # We don't need LFS objects for a code-only sync to SourceForge
+          lfs: false 
 
       - name: Configure SSH and Push
         env:
@@ -34,8 +36,15 @@ jobs:
           eval $(ssh-agent -s)
           ssh-add ~/.ssh/id_ed25519
 
-          # 5. Push to SourceForge using the explicit SSH command config
+          # 5. Add the remote
           git remote add sourceforge ssh://$SF_USER@git.code.sf.net/p/pandora/code
-          
-          # We use -c core.sshCommand to ensure git uses the correct identity file explicitly
-          git -c core.sshCommand="ssh -i ~/.ssh/id_ed25519" push sourceforge main --force
+
+          # 6. STRIP LFS HOOKS: SourceForge doesn't support LFS. 
+          # This removes the local hooks that try to talk to an LFS server.
+          rm -rf .git/hooks/pre-push
+          git config --local lfs.ssh://git.code.sf.net/p/pandora/code.pushurl false
+
+          # 7. Push the 'main' branch
+          # --no-verify bypasses any remaining LFS client-side checks
+          # --force ensures GitHub's history overwrites SourceForge
+          git -c core.sshCommand="ssh -i ~/.ssh/id_ed25519" push sourceforge main --force --no-verify
