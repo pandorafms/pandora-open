@@ -1,0 +1,41 @@
+name: Sync to SourceForge
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure SSH and Push
+        env:
+          SSH_KEY: ${{ secrets.SF_SSH_PRIVATE_KEY }}
+          SF_USER: ${{ secrets.SF_USERNAME }}
+        run: |
+          # 1. Setup SSH directory
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          # 2. Load the Private Key
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          # 3. Add SourceForge to Known Hosts
+          ssh-keyscan git.code.sf.net >> ~/.ssh/known_hosts
+
+          # 4. Start SSH Agent and add key
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/id_ed25519
+
+          # 5. Push to SourceForge using the explicit SSH command config
+          git remote add sourceforge ssh://$SF_USER@git.code.sf.net/p/pandora/code
+          
+          # We use -c core.sshCommand to ensure git uses the correct identity file explicitly
+          git -c core.sshCommand="ssh -i ~/.ssh/id_ed25519" push sourceforge main --force
