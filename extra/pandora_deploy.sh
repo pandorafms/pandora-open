@@ -107,6 +107,16 @@ check_cmd_status () {
     return 0
 }
 
+check_command () {
+    local cmd="$1"
+    local package="$2"
+    if ! command -v "$cmd" &> /dev/null; then
+        echo -e "${red}Error: command '$cmd' not found.${reset}"
+        echo "Please install the '$package' package and try again."
+        exit 1
+    fi
+}
+
 filter_apt_packages () {
     local pkg
     local filtered=""
@@ -295,6 +305,7 @@ detect_php_fpm_service () {
 
 enable_ondrej_php_repo () {
     execute_cmd "$PKG_INSTALL software-properties-common" "Installing software-properties-common"
+    check_command "add-apt-repository" "software-properties-common"
     execute_cmd "add-apt-repository -y ppa:ondrej/php" "Enabling ondrej/php repository"
     execute_cmd "$PKG_UPDATE" "Updating repos after PPA"
 }
@@ -375,7 +386,7 @@ resolve_debian_phpver () {
     fi
 
     # Nothing available in current repos, try ondrej/php.
-    if ! enable_ondrej_php_repo_quiet; then
+    if ! enable_ondrej_php_repo; then
         echo ""
         return 1
     fi
@@ -410,35 +421,11 @@ resolve_debian_phpver_installable () {
             return 0
         fi
 
-        if ! enable_ondrej_php_repo_quiet; then
-            echo ""
-            return 1
-        fi
-
-        cand=$(apt-cache policy "php${requested}" 2>> "$LOGFILE" | awk '/Candidate:/ {print $2}')
-        if [ -n "$cand" ] && [ "$cand" != "(none)" ]; then
-            echo "$requested"
-            return 0
-        fi
-
         echo ""
         return 1
     fi
 
     # Auto mode: try highest preferred versions with a real candidate.
-    for v in 8.4 8.3 8.2; do
-        cand=$(apt-cache policy "php${v}" 2>> "$LOGFILE" | awk '/Candidate:/ {print $2}')
-        if [ -n "$cand" ] && [ "$cand" != "(none)" ]; then
-            echo "$v"
-            return 0
-        fi
-    done
-
-    # If nothing found, enable ondrej/php and retry.
-    if ! enable_ondrej_php_repo_quiet; then
-        echo ""
-        return 1
-    fi
     for v in 8.4 8.3 8.2; do
         cand=$(apt-cache policy "php${v}" 2>> "$LOGFILE" | awk '/Candidate:/ {print $2}')
         if [ -n "$cand" ] && [ "$cand" != "(none)" ]; then
@@ -822,6 +809,10 @@ if [[ "$OS" == "ubuntu" || "$OS" == "debian" ]]; then
     MYSQL_PACKAGE="mariadb-server"
     MYSQL_CNF="/etc/mysql/my.cnf"
     PHPVER_RESOLVED=$(resolve_debian_phpver_installable "$PHPVER")
+    if [ -z "$PHPVER_RESOLVED" ]; then
+        enable_ondrej_php_repo
+        PHPVER_RESOLVED=$(resolve_debian_phpver_installable "$PHPVER")
+    fi
     if [ -z "$PHPVER_RESOLVED" ]; then
         echo "Error: Could not find an installable PHP 8.4/8.3/8.2 version in APT repositories." >&2
         exit 1
