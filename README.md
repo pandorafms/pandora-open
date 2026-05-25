@@ -55,6 +55,8 @@ By default it uses 8081/tcp port for Pandora Console
 
 ### From the repository
 
+- Install Git LFS: https://git-lfs.github.com/
+- Run `git lfs install` before cloning the repository.
 - Clone the repository.
 - Install GNU Make.
 - From the root of the repository, run `make && sudo make install`.
