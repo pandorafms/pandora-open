@@ -6,6 +6,7 @@
 # Avoid prompts
 export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_SUSPEND=1
+export LANG=C
 
 # Constants
 PANDORA_CONSOLE=/var/www/html/pandora_console
