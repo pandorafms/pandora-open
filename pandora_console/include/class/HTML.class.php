@@ -1408,7 +1408,7 @@ class HTML
 var simTree_'.$target.';
     $(document).ready(function() {
         simTree_'.$target.' = simTree({
-            el: $('.$target.'),
+            el: $("#'.$target.'"),
             data: '.json_encode($data).',
             onClick: function (item) {'.$onclick.';},
             onChange: function (item) {
@@ -1418,9 +1418,17 @@ var simTree_'.$target.';
             check: true,
             linkParent: true
         });
-        $("#'.$target.'").append(
-            \'<input type="hidden" id="tree-data-'.$target.'" name="tree-data-'.$target.'">\'
-        );
+        // Avoid stacking duplicate hidden inputs (and therefore duplicate
+        // form fields on submit) if this script block ever runs more than
+        // once against the same container without the container being
+        // torn down first. Without this guard, a second, empty duplicate
+        // field can silently overwrite the real selection server-side,
+        // since PHP keeps only the last value for repeated field names.
+        if ($("#tree-data-'.$target.'").length === 0) {
+            $("#'.$target.'").append(
+                \'<input type="hidden" id="tree-data-'.$target.'" name="tree-data-'.$target.'">\'
+            );
+        }
 
         $("#tree-data-'.$target.'").val(JSON.stringify(simTree_'.$target.'.sels));
     });
