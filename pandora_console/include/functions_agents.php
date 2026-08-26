@@ -253,6 +253,7 @@ function agents_create_agent(
     $values['nombre'] = ($alias_as_name === false) ? hash('sha256', $name.'|'.$ip_address.'|'.time().'|'.sprintf('%04d', rand(0, 10000))) : $name;
     $values['id_grupo'] = $id_group;
     $values['intervalo'] = $interval;
+    $values["cps"] = -1;
 
     if (empty($ip_address) === false) {
             $values['direccion'] = $ip_address;

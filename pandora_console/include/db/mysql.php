@@ -175,8 +175,10 @@ function mysql_connect_db(
 }
 
 
+//!!!!!!!!!!!!!!!
 function mysql_db_get_all_rows_sql($sql, $search_history_db=false, $cache=true, $dbconnection=false)
 {
+    error_log("DB get all rows!!!!!");
     global $config;
 
     $history = [];
@@ -189,6 +191,7 @@ function mysql_db_get_all_rows_sql($sql, $search_history_db=false, $cache=true, 
     if (isset($config['dbcache'])) {
         $cache = $config['dbcache'];
     }
+    error_log("DB get all rows 1");
 
     // Read from the history DB if necessary
     if ($search_history_db && $config['history_db_enabled'] == 1) {
@@ -208,6 +211,7 @@ function mysql_db_get_all_rows_sql($sql, $search_history_db=false, $cache=true, 
             $history = [];
         }
     }
+    error_log("DB get all rows 2");
 
     $return = mysql_db_process_sql(
         $sql,
@@ -215,6 +219,7 @@ function mysql_db_get_all_rows_sql($sql, $search_history_db=false, $cache=true, 
         $dbconnection,
         $cache
     );
+    error_log("DB get all rows 3:[query return]".strval($return));
 
     if ($return === false) {
         $return = [];
@@ -456,6 +461,9 @@ function mysql_db_process_sql_insert($table, $values, $sqltostring=false)
         return $query;
     }
 
+    // DEBUG!!!!!
+    file_put_contents('/tmp/tree_agent_sql.log', $query . "\n", FILE_APPEND);
+
     return db_process_sql(
         $query,
         'insert_id',
@@ -485,6 +493,7 @@ function mysql_db_process_sql_insert($table, $values, $sqltostring=false)
  */
 function mysql_db_process_sql($sql, $rettype='affected_rows', $dbconnection='', $cache=true)
 {
+    error_log("Process SQL!!!!");
     global $config;
     global $sql_cache;
 
@@ -498,22 +507,56 @@ function mysql_db_process_sql($sql, $rettype='affected_rows', $dbconnection='', 
         $cache = $config['dbcache'];
     }
 
+    error_log("process sql 1");
     if ($cache && !empty($sql_cache[$sql_cache['id']][$sql])) {
+    	error_log("process sql 2-1");
         $retval = $sql_cache[$sql_cache['id']][$sql];
         $sql_cache['saved'][$sql_cache['id']]++;
         db_add_database_debug_trace($sql);
     } else {
+    	error_log("process sql 2-2");
         $start = microtime(true);
 
         if ($dbconnection == '') {
             $dbconnection = $config['dbconnection'];
         }
 
-        if ($config['mysqli'] === true) {
-            $result = mysqli_query($dbconnection, $sql);
-        } else {
+    	error_log("process sql 2-2-1: ".strval($config['mysqli']));
+	if ($config['mysqli'] === true) {
+            // デバッグここから
+            // 例外送出する
+	    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+            try{
+                error_log("process sql mysqli!!!!");
+	        $result = mysqli_query($dbconnection, $sql);
+                error_log("process sql mysqli!!!! query done!!!!!");
+	    }
+	    catch (mysqli_sql_exception $e) {
+                error_log("MYSQLI EXCEPTION");
+                error_log("MYSQLI errno: " . $e->getCode());
+                error_log("MYSQLI message: " . $e->getMessage());
+                error_log("MYSQLI file: " . $e->getFile());
+                error_log("MYSQLI line: " . $e->getLine());
+                error_log("MYSQLI sqlstate: " . mysqli_sqlstate($dbconnection));
+                error_log("SQL: " . $sql);
+        
+                throw $e;
+            } catch (Throwable $e) {
+                error_log("GENERAL THROWABLE");
+                error_log("class: " . get_class($e));
+                error_log("code: " . $e->getCode());
+                error_log("message: " . $e->getMessage());
+                error_log("file: " . $e->getFile());
+                error_log("line: " . $e->getLine());
+                error_log("SQL: " . $sql);
+        
+                throw $e;
+	    }
+	    //デバッグここまで
+	} else {
             $result = mysql_query($sql, $dbconnection);
         }
+    	error_log("process sql 2-2-2");
 
         $time = (microtime(true) - $start);
         if ($result === false) {

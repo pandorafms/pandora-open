@@ -599,9 +599,12 @@ function api_get_module_last_value($idAgentModule, $trash1, $other=';', $returnT
  */
 function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
 {
+    error_log("tree_agents start");
+    file_put_contents('/tmp/tree_agent_sql.log', "\n\n==========\n", FILE_APPEND);
     global $config;
 
     if ($other['type'] == 'array') {
+    	error_log("tree_agents 1");
         $separator = $other['data'][0];
         $returnReplace = $other['data'][1];
         if (trim($other['data'][2]) == '') {
@@ -612,7 +615,9 @@ function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
                 $fields[$index] = trim($field);
             }
         }
+    	error_log("tree_agents 2");
     } else {
+    	error_log("tree_agents 3");
         if (strlen($other['data']) == 0) {
             $separator = ';';
             // by default
@@ -622,6 +627,7 @@ function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
 
         $returnReplace = ' ';
         $fields = false;
+    	error_log("tree_agents 4");
     }
 
     /*
@@ -923,6 +929,7 @@ function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
         'alert_commands_description'       => 't5.description as alert_commands_description',
     ];
 
+    error_log("tree_agents 5");
     if ($fields == false) {
         $fields = $master_fields;
     }
@@ -953,6 +960,11 @@ function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
     }
 
     }
+    error_log('module_additional_columns=' . $module_additional_columns);
+    file_put_contents(
+        '/tmp/tree_agent_sql.log',
+        "[1]" . "\n" .
+        'module_additional_columns=' . $module_additional_columns . "\n", FILE_APPEND);
 
     $returnVar = [];
 
@@ -970,7 +982,14 @@ function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
         $groups = [];
     }
 
+    error_log("tree_agents 6-1");
+    
+    error_log("lenght:".count($groups));
+    error_log(var_export($groups, true));
+    $base_module_additional_columns = $module_additional_columns;
     foreach ($groups as &$group) {
+	$module_additional_columns = $base_module_additional_columns;
+    	error_log(var_export($group, true));
         if (check_acl($config['id_user'], $group['group_id'], 'AR') === false) {
             continue;
         }
@@ -992,6 +1011,7 @@ function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
             $agents = [];
         }
 
+    	error_log("tree_agents 6-2");
         if ((bool) check_acl($config['id_user'], $id_group, 'AW') === true) {
             if (array_search('module_plugin_user', $fields) !== false) {
                 $module_additional_columns .= ' ,plugin_user as module_plugin_user';
@@ -1004,9 +1024,16 @@ function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
             if (array_search('module_plugin_macros', $fields) !== false) {
                 $module_additional_columns .= ' ,macros as module_plugin_macros';
             }
-        }
+	}
+        error_log('module_additional_columns=' . $module_additional_columns);
+        file_put_contents(
+            '/tmp/tree_agent_sql.log',
+            "[2]" . "\n" .
+            'module_additional_columns=' . $module_additional_columns . "\n", FILE_APPEND);
 
+    	error_log("tree_agents 6-3");
         foreach ($agents as $index => &$agent) {
+    	    error_log("tree_agents 6-3-1");
             $agent = str_replace('\n', $returnReplace, $agent);
 
             $agent['type_row']  = 'agent';
@@ -1019,6 +1046,13 @@ function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
                 continue;
                 // SKIP collecting MODULES and ALERTS
             }
+    	    error_log("tree_agents 6-3-2");
+            error_log('module_additional_columns=' . $module_additional_columns);
+	    error_log('estado_additional_columns=' . $estado_additional_columns);
+            file_put_contents(
+                '/tmp/tree_agent_sql.log',
+                "[3]" . "\n" .
+                'module_additional_columns=' . $module_additional_columns . "\n".'estado_additional_columns=' . $estado_additional_columns . "\n",FILE_APPEND);
 
             $sql = 'SELECT *
             FROM (SELECT id_agente_modulo as module_id_agent_modulo '.$module_additional_columns.'
@@ -1029,9 +1063,12 @@ function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
                     WHERE id_agente = '.$agent['agent_id'].') t2
                 ON t1.module_id_agent_modulo = t2.module_id_agent_modulo';
 
+	    error_log($sql);
+	    file_put_contents('/tmp/tree_agent_sql.log', $sql."\n", FILE_APPEND);
             $modules = db_get_all_rows_sql(
                 $sql
             );
+    	    error_log("tree_agents 6-3-3");
 
             if ($modules === false) {
                 $modules = [];
@@ -1080,6 +1117,7 @@ function api_get_tree_agents($trash1, $trahs2, $other, $returnType)
         }
     }
 
+    error_log("tree_agents 7");
     $data = [
         'type' => 'array',
         'data' => $returnVar,
@@ -3386,6 +3424,8 @@ function api_set_update_network_module($id_module, $thrash1, $other, $thrash3)
  */
 function api_set_create_plugin_module($id, $thrash1, $other, $thrash3)
 {
+    error_log("Start api_set_create_plugin_module!!!!!!");
+    error_log("create_plugin_module 1");
 
     if ($other['data'][22] == '') {
         returnError('The plugin module could not be created. Id_plugin cannot be left blank.');
@@ -3394,6 +3434,7 @@ function api_set_create_plugin_module($id, $thrash1, $other, $thrash3)
 
     $agent_by_alias = false;
 
+    error_log("create_plugin_module 2");
     if ($other['data'][36] === '1') {
         $agent_by_alias = true;
     }
@@ -3409,6 +3450,7 @@ function api_set_create_plugin_module($id, $thrash1, $other, $thrash3)
             return;
         }
     }
+    error_log("create_plugin_module 2");
 
     $disabled_types_event = [];
     $disabled_types_event[EVENTS_GOING_UNKNOWN] = (int) !$other['data'][26];
@@ -3416,6 +3458,7 @@ function api_set_create_plugin_module($id, $thrash1, $other, $thrash3)
 
     $name = $other['data'][0];
 
+    error_log("create_plugin_module 3");
     $values = [
         'disabled'              => $other['data'][1],
         'id_tipo_modulo'        => $other['data'][2],
@@ -3456,7 +3499,23 @@ function api_set_create_plugin_module($id, $thrash1, $other, $thrash3)
         'ignore_unknown'        => $other['data'][37],
         'warning_time'          => $other['data'][38],
     ];
+    error_log("value length: " . count($other["data"]));
+    error_log("other values:");
+    for($i=0; $i < count($other["data"]); $i++){
+	error_log("[" . $i . "]" . (string)$other["data"][$i]);
+    }
 
+    error_log("values:");
+    foreach($values as $k=>$v){
+	error_log("[" . $k . "]" . "(" . gettype($v)  . ")" . (string)$v);
+    }
+    // バグ対応
+    if ($values["ignore_unknown"] === NULL){
+        $values["ignore_unknown"] = "0";
+    }
+    $values["cps"] = -1;
+
+    error_log("create_plugin_module 4");
     $plugin = db_get_row('tplugin', 'id', $values['id_plugin']);
     if (empty($plugin)) {
         returnError('id_not_found');
@@ -3536,6 +3595,10 @@ function api_set_create_plugin_module($id, $thrash1, $other, $thrash3)
  */
 function api_set_update_plugin_module($id_module, $thrash1, $other, $thrash3)
 {
+    error_log("update plugin module!!!!");
+    foreach($other["data"] as $k=>$v){
+        error_log("[" . $k . "]" . "(" . gettype($v)  . ")" . (string)$v);
+    }
 
     if ($id_module == '') {
         returnError('The plugin module could not be updated. Id_module cannot be left blank.');
@@ -3550,6 +3613,7 @@ function api_set_update_plugin_module($id_module, $thrash1, $other, $thrash3)
     ) {
         return;
     }
+    error_log("update plugin module 1");
 
     // If we want to change the module to a new agent
     if ($other['data'][0] != '') {
@@ -3575,6 +3639,7 @@ function api_set_update_plugin_module($id_module, $thrash1, $other, $thrash3)
             return;
         }
     }
+    error_log("update plugin module 2");
 
     $plugin_module_fields = [
         'id_agente',
@@ -3615,7 +3680,10 @@ function api_set_update_plugin_module($id_module, $thrash1, $other, $thrash3)
         'ignore_unknown',
         'warning_time',
     ];
-
+    error_log("[Other]");
+    foreach($other["data"] as $k=>$v){
+        error_log("[" . $k . "]" . "(" . gettype($v)  . ")" . (string)$v . "[" . $plugin_module_fields[$k] . "]");
+    }
     $values = [];
     $cont = 0;
     foreach ($plugin_module_fields as $field) {
@@ -3630,6 +3698,19 @@ function api_set_update_plugin_module($id_module, $thrash1, $other, $thrash3)
         $cont++;
     }
 
+    # resolve_plugin_id
+    error_log("resolve plugin id");
+    error_log("id_module: " . $id_module);
+    $plugin_id = db_get_value('id_plugin', 'tagente_modulo', 'id_agente_modulo', $id_module);
+    error_log("FOUND!!!!!!!!!!!!");
+    error_log("plugin_id: " . $plugin_id);
+    $values["id_plugin"] = $plugin_id;
+    error_log("update plugin module 3");
+    foreach($values as $k=>$v){
+        error_log("[" . $k . "]" . "(" . gettype($v)  . ")" . (string)$v);
+    }
+
+    # ここでid_pluginが空になっていそう
     $plugin = db_get_row('tplugin', 'id', $values['id_plugin']);
     if (empty($plugin)) {
         returnError('id_not_found');
@@ -3638,6 +3719,7 @@ function api_set_update_plugin_module($id_module, $thrash1, $other, $thrash3)
 
     $plugin_command_macros = $plugin['macros'];
 
+    error_log("update plugin module 4");
     if (!empty($values['macros'])) {
         $macros = io_safe_input_json($values['macros']);
         if (empty($macros)) {
@@ -3646,6 +3728,10 @@ function api_set_update_plugin_module($id_module, $thrash1, $other, $thrash3)
         }
 
         $values['macros'] = io_merge_json_value($plugin_command_macros, $macros);
+    }
+    error_log("update plugin module 5");
+    foreach($values as $k=>$v){
+        error_log("[" . $k . "]" . "(" . gettype($v)  . ")" . (string)$v);
     }
 
     $result_update = modules_update_agent_module($id_module, $values);

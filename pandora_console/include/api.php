@@ -1,4 +1,10 @@
 <?php
+error_log("API START1");
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+error_log("API START2");
+
 /**
  * Pandora FMS OpenSource
  * Copyright (c) 2004-2025 Pandora FMS Community
@@ -341,8 +347,12 @@ if ($correctLogin === true) {
             if (VERBOSE) {
                 error_reporting(E_ALL);
                 ini_set('display_errors', 1);
-            }
+	    }
 
+	    error_log("!!!!call func:" . (string)$function_name);
+            foreach($other["data"] as $k=>$v){
+                error_log("[" . $k . "]" . "(" . gettype($v)  . ")" . (string)$v);
+            }
             call_user_func(
                 $function_name,
                 $id,
