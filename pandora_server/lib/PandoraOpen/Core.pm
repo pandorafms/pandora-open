@@ -3579,9 +3579,7 @@ sub pandora_process_module {
     }
 
     # Generate alerts
-    if (   pandora_inhibit_alerts( $pa_config, $agent, $dbh, 0 ) == 0
-        && pandora_cps_enabled( $agent, $module ) == 0 )
-    {
+    if ( pandora_inhibit_alerts( $pa_config, $agent, $dbh, 0 ) == 0 ) {
         pandora_generate_alerts(
             $pa_config,    $processed_data, $status, $agent,
             $module,       $utimestamp,     $dbh,    $timestamp,
@@ -9715,8 +9713,7 @@ sub pandora_module_unknown {
                 $module->{'id_agente'} );
 
             # Generate alerts
-            if (   pandora_inhibit_alerts( $pa_config, $agent, $dbh, 0 ) == 0
-                && pandora_cps_enabled( $agent, $module ) == 0 )
+            if ( pandora_inhibit_alerts( $pa_config, $agent, $dbh, 0 ) == 0 )
             {
                 my $extra_macros =
                   { _modulelaststatuschange_ => $module->{'last_status_change'}
@@ -9816,8 +9813,7 @@ sub pandora_module_unknown {
                 $module->{'id_agente'} );
 
             # Generate alerts
-            if (   pandora_inhibit_alerts( $pa_config, $agent, $dbh, 0 ) == 0
-                && pandora_cps_enabled( $agent, $module ) == 0 )
+            if ( pandora_inhibit_alerts( $pa_config, $agent, $dbh, 0 ) == 0 )
             {
                 my $extra_macros =
                   { _modulelaststatuschange_ => $module->{'last_status_change'}
